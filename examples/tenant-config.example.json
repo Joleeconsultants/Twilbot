@@ -1,0 +1,22 @@
+{
+  "branding": {
+    "applicationName": "Example Phone"
+  },
+  "restTools": [
+    {
+      "key": "company_lookup",
+      "scope": "live_variable",
+      "method": "POST",
+      "url": "https://api.example.test/lookup",
+      "tokenAlias": "COMPANY_LOOKUP_TOKEN",
+      "parameters": [
+        {
+          "name": "caller_id",
+          "where": "json",
+          "source": "{{caller_id}}",
+          "required": true
+        }
+      ]
+    }
+  ]
+}
