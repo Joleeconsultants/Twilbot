@@ -17,6 +17,7 @@ async function files(directory) {
   const entries = await readdir(directory, { withFileTypes: true });
   const nested = await Promise.all(entries.map(async entry => {
     const file = join(directory, entry.name);
+    if (entry.isDirectory() && [".git", "node_modules"].includes(entry.name)) return [];
     return entry.isDirectory() ? files(file) : [file];
   }));
   return nested.flat();
@@ -24,7 +25,6 @@ async function files(directory) {
 
 const matches = [];
 for (const file of await files(root)) {
-  if (file.includes("node_modules")) continue;
   const path = relative(root, file).replaceAll("\\", "/");
   if (allowed.has(path)) continue;
   const contents = await readFile(file, "utf8");
