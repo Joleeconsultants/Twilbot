@@ -5,11 +5,16 @@ import { fileURLToPath } from "node:url";
 const root = fileURLToPath(new URL("..", import.meta.url));
 const blocked = [
   /joleeconsultants/i,
+  /jolee(?:\.|\b)/i,
   /twilio\.jolee/i,
   /beta\.twilbot/i,
   /jolee\.twilbot/i,
   /atera\.jolee/i,
-  /zacharygaret/i
+  /atera(?:\.|\b)/i,
+  /zachary(?:\b|garet)/i,
+  /rgaret/i,
+  /@(?:gmail|joleeconsultants)\.com/i,
+  /\b[0-9a-f]{32}\b/i
 ];
 const allowed = new Set(["scripts/scan-public-tree.mjs"]);
 
