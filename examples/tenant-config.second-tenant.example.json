@@ -1,0 +1,53 @@
+{
+  "version": 1,
+  "branding": {
+    "applicationName": "Second Tenant Phone"
+  },
+  "restTools": [
+    {
+      "key": "caller_lookup",
+      "scope": "live_variable",
+      "method": "GET",
+      "url": "https://api.second-tenant.example/lookup",
+      "tokenAlias": "SECOND_TENANT_LOOKUP_TOKEN",
+      "parameters": [
+        {
+          "name": "caller_id",
+          "where": "query",
+          "source": "{{caller_id}}",
+          "required": true
+        }
+      ]
+    },
+    {
+      "key": "post_call_sorter",
+      "scope": "output_sorter",
+      "method": "POST",
+      "url": "https://api.second-tenant.example/output/sort",
+      "tokenAlias": "SECOND_TENANT_OUTPUT_TOKEN",
+      "parameters": [
+        {
+          "name": "output",
+          "where": "json",
+          "source": "{{output}}",
+          "required": true
+        }
+      ]
+    },
+    {
+      "key": "case_destination",
+      "scope": "output_destination",
+      "method": "POST",
+      "url": "https://api.second-tenant.example/output/destination",
+      "tokenAlias": "SECOND_TENANT_OUTPUT_TOKEN",
+      "parameters": [
+        {
+          "name": "output",
+          "where": "json",
+          "source": "{{output}}",
+          "required": true
+        }
+      ]
+    }
+  ]
+}

@@ -41,6 +41,121 @@ export interface RestTool {
   parameters: RestParameter[];
 }
 
+/**
+ * Portable, secret-free configuration that a private tenant adapter can
+ * export, validate, and import. Token aliases are identifiers only; the
+ * adapter resolves their values from its own secret provider.
+ */
+export interface TenantConfig {
+  version: 1;
+  branding: {
+    applicationName: string;
+  };
+  restTools?: RestTool[];
+}
+
+export interface TenantConfigValidation {
+  ok: boolean;
+  errors: string[];
+  config?: TenantConfig;
+}
+
+const REST_SCOPES = new Set<RestTool["scope"]>(["live_variable", "output_sorter", "output_destination"]);
+const REST_METHODS = new Set<RestTool["method"]>(["GET", "POST", "PUT", "PATCH"]);
+const REST_PARAMETER_LOCATIONS = new Set<RestParameterLocation>(["query", "json", "header"]);
+const PORTABLE_KEY = /^[a-z][a-z0-9_]{0,63}$/;
+const PORTABLE_ALIAS = /^[A-Z][A-Z0-9_]{0,127}$/;
+
+/** Validates and normalizes the public tenant configuration format. */
+export function validateTenantConfig(input: unknown): TenantConfigValidation {
+  const errors: string[] = [];
+  const value = input && typeof input === "object" && !Array.isArray(input) ? input as Record<string, unknown> : null;
+  if (!value) return { ok: false, errors: ["Tenant configuration must be an object."] };
+  if (value.version !== 1) errors.push("Tenant configuration version must be 1.");
+
+  const branding = value.branding && typeof value.branding === "object" && !Array.isArray(value.branding)
+    ? value.branding as Record<string, unknown>
+    : {};
+  const applicationName = clean(branding.applicationName as Scalar);
+  if (!applicationName || applicationName.length > 80) errors.push("branding.applicationName must contain 1 to 80 characters.");
+
+  const rawTools = value.restTools === undefined ? [] : value.restTools;
+  if (!Array.isArray(rawTools)) errors.push("restTools must be an array when provided.");
+  const keys = new Set<string>();
+  const restTools: RestTool[] = [];
+
+  if (Array.isArray(rawTools)) rawTools.forEach((rawTool, toolIndex) => {
+    const tool = rawTool && typeof rawTool === "object" && !Array.isArray(rawTool) ? rawTool as Record<string, unknown> : null;
+    const prefix = `restTools[${toolIndex}]`;
+    if (!tool) {
+      errors.push(`${prefix} must be an object.`);
+      return;
+    }
+    if ("token" in tool || "bearerToken" in tool || "secret" in tool) errors.push(`${prefix} must use tokenAlias, never a token value.`);
+    const key = clean(tool.key as Scalar).toLowerCase();
+    if (!PORTABLE_KEY.test(key)) errors.push(`${prefix}.key must be lowercase snake_case.`);
+    if (keys.has(key)) errors.push(`${prefix}.key must be unique.`);
+    keys.add(key);
+    const scope = clean(tool.scope as Scalar) as RestTool["scope"];
+    if (!REST_SCOPES.has(scope)) errors.push(`${prefix}.scope is invalid.`);
+    const method = clean(tool.method as Scalar).toUpperCase() as RestTool["method"];
+    if (!REST_METHODS.has(method)) errors.push(`${prefix}.method is invalid.`);
+    const url = clean(tool.url as Scalar);
+    try {
+      if (new URL(url).protocol !== "https:") errors.push(`${prefix}.url must use HTTPS.`);
+    } catch {
+      errors.push(`${prefix}.url must be a valid HTTPS URL.`);
+    }
+    const tokenAlias = clean(tool.tokenAlias as Scalar);
+    if (tokenAlias && !PORTABLE_ALIAS.test(tokenAlias)) errors.push(`${prefix}.tokenAlias must be an uppercase alias.`);
+    if (!Array.isArray(tool.parameters)) errors.push(`${prefix}.parameters must be an array.`);
+    const parameters: RestParameter[] = [];
+    const parameterNames = new Set<string>();
+    if (Array.isArray(tool.parameters)) tool.parameters.forEach((rawParameter, parameterIndex) => {
+      const parameter = rawParameter && typeof rawParameter === "object" && !Array.isArray(rawParameter)
+        ? rawParameter as Record<string, unknown>
+        : null;
+      const parameterPrefix = `${prefix}.parameters[${parameterIndex}]`;
+      if (!parameter) {
+        errors.push(`${parameterPrefix} must be an object.`);
+        return;
+      }
+      const name = clean(parameter.name as Scalar);
+      const where = clean(parameter.where as Scalar) as RestParameterLocation;
+      if (!PORTABLE_KEY.test(name)) errors.push(`${parameterPrefix}.name must be lowercase snake_case.`);
+      if (parameterNames.has(name)) errors.push(`${parameterPrefix}.name must be unique within the tool.`);
+      parameterNames.add(name);
+      if (!REST_PARAMETER_LOCATIONS.has(where)) errors.push(`${parameterPrefix}.where is invalid.`);
+      const source = parameter.source === undefined ? undefined : clean(parameter.source as Scalar);
+      const literal = parameter.value === undefined ? undefined : clean(parameter.value as Scalar);
+      if (!source && literal === undefined) errors.push(`${parameterPrefix} needs source or value.`);
+      if (parameter.required !== undefined && typeof parameter.required !== "boolean") errors.push(`${parameterPrefix}.required must be boolean.`);
+      parameters.push({ name, where, ...(source ? { source } : {}), ...(literal !== undefined ? { value: literal } : {}), ...(typeof parameter.required === "boolean" ? { required: parameter.required } : {}) });
+    });
+    parameters.length || errors.push(`${prefix} must define at least one parameter.`);
+    restTools.push({ key, scope, method, url, ...(tokenAlias ? { tokenAlias } : {}), parameters });
+  });
+
+  if (errors.length) return { ok: false, errors };
+  return { ok: true, errors: [], config: { version: 1, branding: { applicationName }, restTools } };
+}
+
+/** Parses an exported JSON tenant configuration without ever resolving aliases. */
+export function parseTenantConfig(serialized: string): TenantConfigValidation {
+  try {
+    return validateTenantConfig(JSON.parse(serialized));
+  } catch {
+    return { ok: false, errors: ["Tenant configuration must be valid JSON."] };
+  }
+}
+
+/** Produces a stable, pretty JSON export after validation. */
+export function exportTenantConfig(input: unknown): string {
+  const result = validateTenantConfig(input);
+  if (!result.ok || !result.config) throw new Error(result.errors.join(" "));
+  return JSON.stringify(result.config, null, 2);
+}
+
 export interface BuiltRestRequest {
   method: RestTool["method"];
   url: string;

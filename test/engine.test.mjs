@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import test from "node:test";
 import {
   advancePromptFlow,
@@ -9,8 +10,11 @@ import {
   formatOutputEmail,
   normalizeE164,
   outputRetryDelaySeconds,
+  exportTenantConfig,
+  parseTenantConfig,
   renderTemplate,
-  runPostCallOutputPipeline
+  runPostCallOutputPipeline,
+  validateTenantConfig
 } from "../src/index.ts";
 
 const values = { caller: { id: "(555) 010-0200" }, company: "Example Co" };
@@ -35,6 +39,29 @@ test("builds a REST request without exposing a token in the URL", () => {
   assert.equal(request.headers.authorization, "Bearer private-token");
   assert.equal(request.url, "https://api.example.test/lookup");
   assert.deepEqual(request.body, { caller_id: "(555) 010-0200" });
+});
+
+test("validates portable configurations for two independent tenants", async () => {
+  const example = JSON.parse(await readFile(new URL("../examples/tenant-config.example.json", import.meta.url), "utf8"));
+  const secondTenant = JSON.parse(await readFile(new URL("../examples/tenant-config.second-tenant.example.json", import.meta.url), "utf8"));
+  const first = validateTenantConfig(example);
+  const second = validateTenantConfig(secondTenant);
+  assert.equal(first.ok, true);
+  assert.equal(second.ok, true);
+  assert.equal(parseTenantConfig(exportTenantConfig(secondTenant)).config?.branding.applicationName, "Second Tenant Phone");
+  const request = buildRestRequest(second.config.restTools[0], { caller_id: "+15550100200" });
+  assert.equal(request.url, "https://api.second-tenant.example/lookup?caller_id=%2B15550100200");
+});
+
+test("rejects token values and invalid portable tenant configuration", () => {
+  const invalid = validateTenantConfig({
+    version: 1,
+    branding: { applicationName: "Unsafe" },
+    restTools: [{ key: "Unsafe-Key", scope: "live_variable", method: "POST", url: "http://example.test", token: "never-export-this", parameters: [] }],
+  });
+  assert.equal(invalid.ok, false);
+  assert.match(invalid.errors.join(" "), /tokenAlias/);
+  assert.match(invalid.errors.join(" "), /HTTPS/);
 });
 
 test("formats generic output without tenant labels", () => {

@@ -44,6 +44,14 @@ Alias names such as `COMPANY_LOOKUP_TOKEN` may be stored as editable GitHub Acti
 
 The public engine never deploys a Worker and never receives tenant credentials.
 
+## Portable Tenant Configuration
+
+The versioned JSON format in [`examples/tenant-config.example.json`](examples/tenant-config.example.json) is the portable import/export contract for generic REST tools. A second independent fixture, [`examples/tenant-config.second-tenant.example.json`](examples/tenant-config.second-tenant.example.json), proves the contract is not shaped around a single customer.
+
+Use `validateTenantConfig()` before saving a configuration, `exportTenantConfig()` to create a reviewable JSON export, and `parseTenantConfig()` when importing it. The format contains only application branding, REST request shape, and token *aliases*. It never contains domains, call data, bearer-token values, tenant recipients, or vendor-specific rules.
+
+Every external integration is REST-only at this boundary. A private Worker resolves a configured `tokenAlias`, sends the HTTPS request, and owns retries, output delivery, and any client-specific systems. This package does not import vendor SDKs or require vendor bindings.
+
 ## Reusable Worker Contracts
 
 `classifyConversationRelayEvent()` turns an untrusted decoded realtime event
