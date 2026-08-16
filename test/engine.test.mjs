@@ -4,10 +4,13 @@ import {
   advancePromptFlow,
   buildOutputPayload,
   buildRestRequest,
+  classifyConversationRelayEvent,
   evaluateDeterministicCondition,
   formatOutputEmail,
   normalizeE164,
-  renderTemplate
+  outputRetryDelaySeconds,
+  renderTemplate,
+  runPostCallOutputPipeline
 } from "../src/index.ts";
 
 const values = { caller: { id: "(555) 010-0200" }, company: "Example Co" };
@@ -64,4 +67,34 @@ test("formats an escaped plain-text output email", () => {
   const email = formatOutputEmail({ company_name: "Example <Co>", issue_summary: "Needs help." }, "Phone call");
   assert.equal(email.text, "Company Name: Example <Co>\n\nSummary: Needs help.");
   assert.match(email.html, /Example &lt;Co&gt;/);
+});
+
+test("classifies generic realtime call events without provider bindings", () => {
+  assert.deepEqual(classifyConversationRelayEvent({ type: "setup" }), { kind: "connected", transcript: "" });
+  assert.deepEqual(classifyConversationRelayEvent({ type: "prompt", voicePrompt: "Need help" }), { kind: "caller_prompt", transcript: "Need help" });
+  assert.deepEqual(classifyConversationRelayEvent({ type: "dtmf", digit: "1" }), { kind: "dtmf", transcript: "1" });
+});
+
+test("runs the generic post-call sequence and skips disabled email", async () => {
+  const steps = [];
+  const result = await runPostCallOutputPipeline({ value: 0, email: false }, {
+    step: async (name, work) => { steps.push(name); return work(); },
+    start: async (state) => ({ ...state, value: state.value + 1 }),
+    isDuplicate: () => false,
+    duplicateResult: () => ({ ok: true, duplicate: true }),
+    loadSettings: async (state) => ({ ...state, value: state.value + 1 }),
+    formatOutput: async (state) => ({ ...state, value: state.value + 1 }),
+    runSorters: async (state) => ({ ...state, value: state.value + 1 }),
+    shouldSendEmail: (state) => state.email,
+    sendEmail: async (state) => ({ ...state, value: state.value + 1 }),
+    skipEmail: async (state) => ({ ...state, value: state.value + 1 }),
+    runDestinations: async (state) => ({ ...state, value: state.value + 1 }),
+    persist: async (state) => ({ ...state, value: state.value + 1 }),
+    result: (state) => ({ ok: true, value: state.value }),
+  });
+  assert.deepEqual(result, { ok: true, value: 7 });
+  assert.deepEqual(steps, ["1. Start output delivery", "2. Load output settings", "3. Format output", "3a. Run REST output sorters", "4a. Skip email output", "5. Run REST output destinations", "6. Persist output result"]);
+  assert.equal(outputRetryDelaySeconds(0), 5);
+  assert.equal(outputRetryDelaySeconds(2), 20);
+  assert.equal(outputRetryDelaySeconds(10), 300);
 });

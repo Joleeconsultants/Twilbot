@@ -96,6 +96,73 @@ export interface OutputEmail {
   html: string;
 }
 
+/**
+ * A tenant-neutral view of the events sent by a realtime phone provider.
+ * Adapters retain provider authentication and transport handling; this helper
+ * only makes the state-machine decision testable outside a Worker runtime.
+ */
+export interface ConversationRelayEvent {
+  kind: "connected" | "caller_prompt" | "dtmf" | "error" | "unknown";
+  transcript: string;
+}
+
+export function classifyConversationRelayEvent(input: unknown): ConversationRelayEvent {
+  const event = input && typeof input === "object" ? input as Record<string, unknown> : {};
+  const type = clean(event.type as Scalar).toLowerCase();
+  if (type === "connected" || type === "setup") return { kind: "connected", transcript: "" };
+  if (type === "prompt") {
+    return { kind: "caller_prompt", transcript: clean(event.voicePrompt as Scalar || event.transcript as Scalar || event.speechResult as Scalar) };
+  }
+  if (type === "dtmf") return { kind: "dtmf", transcript: clean(event.digit as Scalar) };
+  if (type === "error") return { kind: "error", transcript: "" };
+  return { kind: "unknown", transcript: "" };
+}
+
+/**
+ * The public ordering contract for post-call delivery. The adapter injects
+ * durable Workflow steps and its own provider functions, so credentials,
+ * Cloudflare bindings, tenant output configuration, and destinations never
+ * enter the public package.
+ */
+export interface PostCallOutputPipeline<State, Result> {
+  step: (name: string, work: () => Promise<State>) => Promise<State>;
+  start: (state: State) => Promise<State>;
+  isDuplicate: (state: State) => boolean;
+  duplicateResult: (state: State) => Result;
+  loadSettings: (state: State) => Promise<State>;
+  formatOutput: (state: State) => Promise<State>;
+  runSorters: (state: State) => Promise<State>;
+  shouldSendEmail: (state: State) => boolean;
+  sendEmail: (state: State) => Promise<State>;
+  skipEmail: (state: State) => Promise<State>;
+  runDestinations: (state: State) => Promise<State>;
+  persist: (state: State) => Promise<State>;
+  result: (state: State) => Result;
+}
+
+export async function runPostCallOutputPipeline<State, Result>(initial: State, pipeline: PostCallOutputPipeline<State, Result>): Promise<Result> {
+  let state = await pipeline.step("1. Start output delivery", () => pipeline.start(initial));
+  if (pipeline.isDuplicate(state)) return pipeline.duplicateResult(state);
+
+  state = await pipeline.step("2. Load output settings", () => pipeline.loadSettings(state));
+  state = await pipeline.step("3. Format output", () => pipeline.formatOutput(state));
+  state = await pipeline.step("3a. Run REST output sorters", () => pipeline.runSorters(state));
+  state = pipeline.shouldSendEmail(state)
+    ? await pipeline.step("4. Send email output", () => pipeline.sendEmail(state))
+    : await pipeline.step("4a. Skip email output", () => pipeline.skipEmail(state));
+  state = await pipeline.step("5. Run REST output destinations", () => pipeline.runDestinations(state));
+  state = await pipeline.step("6. Persist output result", () => pipeline.persist(state));
+  return pipeline.result(state);
+}
+
+/** Returns a bounded retry delay suitable for an adapter's scheduler. */
+export function outputRetryDelaySeconds(attempt: number, baseSeconds = 5, maxSeconds = 300): number {
+  const safeAttempt = Math.max(0, Math.floor(attempt));
+  const safeBase = Math.max(1, Math.floor(baseSeconds));
+  const safeMax = Math.max(safeBase, Math.floor(maxSeconds));
+  return Math.min(safeMax, safeBase * 2 ** safeAttempt);
+}
+
 export function clean(value: Scalar): string {
   return String(value ?? "").trim();
 }

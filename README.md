@@ -11,6 +11,11 @@ This package intentionally contains no tenant domains, prompt text, phone number
 - Callback-driven prompt-graph advancement that private adapters use for live calls.
 - Generic REST request shaping for live variables, output sorters, and output destinations.
 - Generic post-call output payload and plain-text/email formatting.
+- Provider-neutral realtime event classification for a ConversationRelay-style
+  adapter.
+- A reusable post-call output pipeline contract: start, load settings, format,
+  optional REST sorters, optional email, REST destinations, then persistence.
+- A bounded retry-delay helper for adapter schedulers and durable workflows.
 
 ## Does Not Include
 
@@ -38,6 +43,21 @@ is shared and fully testable.
 Alias names such as `COMPANY_LOOKUP_TOKEN` may be stored as editable GitHub Actions variables in the private tenant repository. The value behind the alias must remain in the tenant's Cloudflare Secret Store, Worker secret, or GitHub Secret. The public engine receives neither.
 
 The public engine never deploys a Worker and never receives tenant credentials.
+
+## Reusable Worker Contracts
+
+`classifyConversationRelayEvent()` turns an untrusted decoded realtime event
+into one of `connected`, `caller_prompt`, `dtmf`, `error`, or `unknown`. It
+does not authenticate a provider and does not perform WebSocket I/O.
+
+`runPostCallOutputPipeline()` owns the generic delivery ordering while the
+private adapter supplies durable workflow steps and concrete implementations.
+This preserves durable retries and visual workflow steps without putting
+Cloudflare bindings, an email address, REST URL, or a ticketing integration in
+this repository.
+
+`outputRetryDelaySeconds()` is a small, bounded exponential-backoff utility
+for adapters that schedule retry attempts themselves.
 
 ## Web shell
 
