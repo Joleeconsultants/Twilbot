@@ -2871,7 +2871,10 @@
       const keys = Array.from(outputGridEl.querySelectorAll('[data-output-key]')).map(el => el.getAttribute('data-output-key')).filter(Boolean);
       let destinationRows = [];
       try {
-        destinationRows = normalizeOutputDestinations(lastOutputs.output_destinations);
+        destinationRows = normalizeOutputDestinations(lastOutputs.output_destinations)
+          // A saved destination without a live endpoint is configuration work,
+          // not an output the operator can enable from the call screen.
+          .filter(row => !!(row.rest && row.rest.enabled && String(row.rest.url || '').trim()));
       } catch(err) {
         console.error('Output destination config failed:', err);
         destinationRows = [];
