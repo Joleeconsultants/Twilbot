@@ -102,7 +102,11 @@ export function validateTenantConfig(input: unknown): TenantConfigValidation {
     if (!REST_METHODS.has(method)) errors.push(`${prefix}.method is invalid.`);
     const url = clean(tool.url as Scalar);
     try {
-      if (new URL(url).protocol !== "https:") errors.push(`${prefix}.url must use HTTPS.`);
+      const parsedUrl = new URL(url);
+      if (parsedUrl.protocol !== "https:") errors.push(`${prefix}.url must use HTTPS.`);
+      if ([...parsedUrl.searchParams.keys()].some((name) => /(?:token|secret|authorization|api[_-]?key)/i.test(name))) {
+        errors.push(`${prefix}.url must not contain credential-like query parameters.`);
+      }
     } catch {
       errors.push(`${prefix}.url must be a valid HTTPS URL.`);
     }

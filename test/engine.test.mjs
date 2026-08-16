@@ -57,11 +57,12 @@ test("rejects token values and invalid portable tenant configuration", () => {
   const invalid = validateTenantConfig({
     version: 1,
     branding: { applicationName: "Unsafe" },
-    restTools: [{ key: "Unsafe-Key", scope: "live_variable", method: "POST", url: "http://example.test", token: "never-export-this", parameters: [] }],
+    restTools: [{ key: "Unsafe-Key", scope: "live_variable", method: "POST", url: "http://example.test?api_key=never-export-this", token: "never-export-this", parameters: [] }],
   });
   assert.equal(invalid.ok, false);
   assert.match(invalid.errors.join(" "), /tokenAlias/);
   assert.match(invalid.errors.join(" "), /HTTPS/);
+  assert.match(invalid.errors.join(" "), /credential-like/);
 });
 
 test("formats generic output without tenant labels", () => {
