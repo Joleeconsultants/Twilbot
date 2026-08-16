@@ -2890,9 +2890,11 @@
       }
       renderOutputSorterPanel();
       outputGridEl.querySelectorAll('button[data-output-key]').forEach(el => {
-        if(el.dataset.boundClick === '1') return;
+        // DOM snapshots preserve data attributes but not event listeners. Keep the
+        // binding marker on the runtime node so a restored mobile shell rebinds.
+        if(el.__twilbotOutputClickBound) return;
         el.addEventListener('click', onOutputToggle);
-        el.dataset.boundClick = '1';
+        el.__twilbotOutputClickBound = true;
       });
     }
 
