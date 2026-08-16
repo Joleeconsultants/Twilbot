@@ -25,4 +25,11 @@
   }
 
   global.TwilbotShell = Object.freeze({ apply });
+  if (global.TWILBOT_SHELL_CONFIG) {
+    if (global.document && global.document.readyState === "loading") {
+      global.document.addEventListener("DOMContentLoaded", () => apply(global.TWILBOT_SHELL_CONFIG), { once: true });
+    } else {
+      apply(global.TWILBOT_SHELL_CONFIG);
+    }
+  }
 })(window);
