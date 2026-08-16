@@ -729,7 +729,9 @@
         if(document.hidden || callLogsBusy) return;
         loadCallLogs(false, false, {silent:true});
       }, 45000);
-      loadCallLogs(true).finally(() => document.body.classList.remove('booting'));
+      // The shared bootstrap owns the first reveal. Releasing here can expose
+      // cached controls before the authoritative prompt settings arrive.
+      loadCallLogs(true);
     }
     function saveUiSnapshot() {
       try {
@@ -761,7 +763,6 @@
           callSwitchBtnEl.textContent = String(snapshot.callSwitchText || '');
           callSwitchBtnEl.classList.toggle('show', !!snapshot.callSwitchVisible);
         }
-        if(typeof document !== 'undefined') document.body.classList.remove('booting');
         return true;
       } catch(_err) {
         return false;
