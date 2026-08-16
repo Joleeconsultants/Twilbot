@@ -33,6 +33,13 @@ Alias names such as `COMPANY_LOOKUP_TOKEN` may be stored as editable GitHub Acti
 
 The public engine never deploys a Worker and never receives tenant credentials.
 
+## Web shell
+
+The reusable browser shell lives in [`web/`](web/). It is intentionally limited
+to generic Twilbot presentation behavior. Private tenant repositories vendor the
+asset at build time and supply their own routes, feature configuration, and
+integrations.
+
 ## Security Boundary
 
 `tokenAlias` is an identifier only. A tenant adapter resolves it from its own secret provider. Never persist an actual bearer token in public configuration, browser storage, output records, issue text, or logs.
