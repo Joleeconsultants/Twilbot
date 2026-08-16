@@ -3046,7 +3046,10 @@
         console.error('Toggle failed:', err);
       } finally {
         delete outputBusyKeys[key];
-        syncOutputControl(key, !!lastOutputs[key], false);
+        const currentDestination = destinationKey
+          ? normalizeOutputDestinations(lastOutputs.output_destinations).find(row => row.key === destinationKey)
+          : null;
+        syncOutputControl(key, destinationKey ? !!(currentDestination || {}).enabled : !!lastOutputs[key], false);
       }
     }
 
