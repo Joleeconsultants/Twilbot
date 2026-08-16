@@ -1,8 +1,17 @@
-# Twilbot Web Shell
+# Twilbot Web App
 
-`twilbot-shell.js` is a dependency-free public browser asset for a tenant-owned
-Twilbot site. It applies the tenant's visible product name without embedding any
-tenant domains, routes, credentials, prompts, customer data, or vendor logic.
+`twilbot-app.html` is the complete, tenant-neutral Twilbot browser interface:
+call status, prompt builder, conditional-flow editor, dynamic variables, REST
+API request tools, generated-audio controls, output switches, and call logs.
+
+It deliberately uses only same-origin generic `/api/phone/*` routes. A private
+tenant adapter supplies those routes, storage, secrets, authentication, phone
+provider configuration, output providers, and tenant settings. The public app
+contains no tenant domains, phone numbers, contacts, aliases, prompts, or
+vendor-specific behavior.
+
+`twilbot-shell.js` remains a small optional helper that applies a tenant-owned
+visible product name.
 
 ```html
 <h1 data-twilbot-title>Twilbot</h1>
@@ -18,5 +27,5 @@ tenant domains, routes, credentials, prompts, customer data, or vendor logic.
 </script>
 ```
 
-The private tenant adapter vendors this file during its build and owns every
-functional endpoint, authentication rule, storage binding, and tenant setting.
+The private tenant adapter vendors both browser assets during its build and owns
+every functional endpoint, authentication rule, storage binding, and tenant setting.
