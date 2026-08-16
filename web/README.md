@@ -10,7 +10,8 @@ provider configuration, output providers, and tenant settings. The public app
 contains no tenant domains, phone numbers, contacts, aliases, prompts, or
 vendor-specific behavior.
 
-`twilbot-shell.js` remains a small optional helper that applies a tenant-owned
+`admin-favicon.png` and `admin-apple-touch-icon.png` are neutral Twilbot browser
+branding assets. `twilbot-shell.js` remains a small optional helper that applies a tenant-owned
 visible product name.
 
 ```html
@@ -27,5 +28,5 @@ visible product name.
 </script>
 ```
 
-The private tenant adapter vendors both browser assets during its build and owns
+The private tenant adapter vendors all browser assets during its build and owns
 every functional endpoint, authentication rule, storage binding, and tenant setting.
