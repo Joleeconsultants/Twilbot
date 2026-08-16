@@ -8,8 +8,9 @@ This package intentionally contains no tenant domains, prompt text, phone number
 
 - Prompt-template interpolation with `{{variable}}` support.
 - Deterministic condition evaluation.
+- Callback-driven prompt-graph advancement that private adapters use for live calls.
 - Generic REST request shaping for live variables, output sorters, and output destinations.
-- Generic post-call output payload and plain-text formatting.
+- Generic post-call output payload and plain-text/email formatting.
 
 ## Does Not Include
 
@@ -28,6 +29,11 @@ Each tenant repository should:
 2. Own its own Cloudflare Worker config, bindings, secrets, domains, Access policy, and deployment action.
 3. Keep prompts and integration configuration private.
 4. Invoke client-specific systems only through configured REST endpoints.
+
+The prompt-graph runner intentionally delegates branch decisions and answer
+requirements to the tenant adapter. That keeps a tenant's Workers AI model,
+call policy, and provider bindings private while the queue traversal behavior
+is shared and fully testable.
 
 Alias names such as `COMPANY_LOOKUP_TOKEN` may be stored as editable GitHub Actions variables in the private tenant repository. The value behind the alias must remain in the tenant's Cloudflare Secret Store, Worker secret, or GitHub Secret. The public engine receives neither.
 

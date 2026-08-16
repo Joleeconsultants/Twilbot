@@ -58,6 +58,44 @@ export interface OutputFields {
   [key: string]: Scalar | undefined;
 }
 
+export interface PromptFlowPrompt {
+  id: string;
+  key?: string;
+  index?: number;
+  text: string;
+  mode?: string;
+}
+
+export interface PromptFlowCondition {
+  id: string;
+  thenIds: string[];
+  elseIds: string[];
+}
+
+export interface AdvancePromptFlowOptions {
+  queue: string[];
+  prompts: PromptFlowPrompt[];
+  conditions: PromptFlowCondition[];
+  values: Values;
+  shouldWaitForAnswer: (prompt: PromptFlowPrompt) => boolean;
+  decideCondition: (condition: PromptFlowCondition) => Promise<boolean> | boolean;
+}
+
+export interface PromptFlowAdvanceResult {
+  queue: string[];
+  spokenPromptIds: string[];
+  text: string;
+  waitingForAnswer: boolean;
+  currentPrompt?: PromptFlowPrompt;
+  completed: boolean;
+}
+
+export interface OutputEmail {
+  subject: string;
+  text: string;
+  html: string;
+}
+
 export function clean(value: Scalar): string {
   return String(value ?? "").trim();
 }
@@ -85,6 +123,43 @@ export function evaluateDeterministicCondition(condition: DeterministicCondition
     case "contains": return left.includes(right);
     case "not_contains": return !left.includes(right);
   }
+}
+
+/**
+ * Advances a saved prompt graph until the next caller answer is required or
+ * the graph finishes. The private adapter supplies its own condition policy,
+ * which keeps AI providers and tenant rules outside this package.
+ */
+export async function advancePromptFlow(options: AdvancePromptFlowOptions): Promise<PromptFlowAdvanceResult> {
+  const queue = options.queue.map(clean).filter(Boolean);
+  const promptById = new Map<string, PromptFlowPrompt>();
+  const conditionById = new Map<string, PromptFlowCondition>();
+  for (const prompt of options.prompts) {
+    promptById.set(clean(prompt.id), prompt);
+    if (prompt.key) promptById.set(clean(prompt.key), prompt);
+  }
+  for (const condition of options.conditions) conditionById.set(clean(condition.id), condition);
+
+  const spokenPromptIds: string[] = [];
+  const parts: string[] = [];
+  while (queue.length) {
+    const nextId = clean(queue.shift());
+    if (!nextId) continue;
+    const condition = conditionById.get(nextId);
+    if (condition) {
+      const selected = await options.decideCondition(condition) ? condition.thenIds : condition.elseIds;
+      queue.unshift(...selected.map(clean).filter(Boolean));
+      continue;
+    }
+    const prompt = promptById.get(nextId);
+    if (!prompt || !clean(prompt.text)) continue;
+    parts.push(renderTemplate(prompt.text, options.values));
+    spokenPromptIds.push(prompt.id);
+    if (options.shouldWaitForAnswer(prompt)) {
+      return { queue, spokenPromptIds, text: parts.join("\n\n"), waitingForAnswer: true, currentPrompt: prompt, completed: false };
+    }
+  }
+  return { queue, spokenPromptIds, text: parts.join("\n\n"), waitingForAnswer: false, completed: true };
 }
 
 export function normalizeE164(value: string): string {
@@ -129,4 +204,18 @@ export function buildOutputText(fields: OutputFields): string {
 export function buildOutputPayload(fields: OutputFields, variables: Values = {}): Values {
   const output = { ...fields, text: buildOutputText(fields) };
   return { ...fields, summary: { ...fields }, output, variables };
+}
+
+export function formatOutputEmail(fields: OutputFields, subject: string): OutputEmail {
+  const text = buildOutputText(fields);
+  const escaped = text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\"/g, "&quot;");
+  return {
+    subject: clean(subject),
+    text,
+    html: `<pre style="font:14px/1.45 system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; white-space:pre-wrap">${escaped}</pre>`,
+  };
 }
