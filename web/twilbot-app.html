@@ -1505,9 +1505,12 @@
         wrap = variableGridEl.querySelector('.variableWrap');
       }
       const launcher = document.getElementById('variableLauncher');
-      if(launcher && launcher.dataset.boundClick !== '1') {
+      // A cached HTML snapshot can retain dataset values without retaining its
+      // event listeners. Use a runtime-only marker so the launcher is always
+      // rehydrated after a mobile refresh.
+      if(launcher && !launcher.__twilbotVariableLauncherBound) {
         launcher.addEventListener('click', (ev) => { ev.stopPropagation(); captureVariableInputsToState(); variablePanelOpen = !variablePanelOpen; renderVariables(); });
-        launcher.dataset.boundClick = '1';
+        launcher.__twilbotVariableLauncherBound = true;
       }
       const launcherText = wrap ? wrap.querySelector('.variableLauncherText') : null;
       const panel = document.getElementById('variablePanel');
