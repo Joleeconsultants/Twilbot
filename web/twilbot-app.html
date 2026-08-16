@@ -5726,6 +5726,14 @@ ${conditionText}`);
         ensureOutputControls();
         ensureApiToolsPanelRendered();
         syncAllOutputControls(lastOutputs);
+      } else {
+        // Cached markup keeps the first mobile paint stable, but markup alone
+        // has no event listeners. Rehydrate the interactive controls without
+        // rebuilding the prompt list that was just restored from the cache.
+        renderVariables();
+        ensureOutputControls();
+        ensureApiToolsPanelRendered();
+        syncAllOutputControls(lastOutputs);
       }
       initMainViewTabs(initialMainView);
     } catch(err) {
