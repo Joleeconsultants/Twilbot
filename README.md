@@ -14,6 +14,8 @@ This package intentionally contains no tenant domains, prompt text, phone number
   queries wait for caller speech. The final prompt is a statement and a cleared
   prompt slot is a clean end-of-call point.
 - Generic REST request shaping for live variables, output sorters, and output destinations.
+  Live variables expose a prompt key; sorters use an explicit enabled setting;
+  destinations use a display color while their generated switch controls delivery.
 - Generic post-call output payload and plain-text/email formatting.
 - Provider-neutral realtime event classification for a ConversationRelay-style
   adapter.
@@ -85,6 +87,22 @@ gh workflow run check
 ```
 
 Every external integration is REST-only at this boundary. A private Worker resolves a configured `tokenAlias`, sends the HTTPS request, and owns retries, output delivery, and any client-specific systems. This package does not import vendor SDKs or require vendor bindings.
+
+## REST Tool Editor
+
+The reusable editor keeps user-facing configuration intentionally small:
+
+- **Live Variable:** label, prompt key, and request parameters. This is the only
+  tool category that creates a `{{variable}}` available to prompts and If blocks.
+- **Output Sorter:** workflow label, request parameters, and **Enabled: Yes/No**.
+  An enabled sorter runs before final output delivery; a disabled sorter remains
+  saved but is skipped.
+- **Output Destination:** switch label, request parameters, and a switch color.
+  Green is the default. The color is visual only; the generated switch is the
+  actual per-call delivery control.
+
+Private adapters keep their stable internal identifiers behind this editor so a
+tenant never needs to invent them or expose them in prompt configuration.
 
 ## Reusable Worker Contracts
 
