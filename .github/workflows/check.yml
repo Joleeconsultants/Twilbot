@@ -1,9 +1,13 @@
 name: check
 
+# Tests-only CI for humans and Cursor (`gh workflow run check`).
+# No deploy, no repository secrets, no vendor bindings, no tenant apply.
+
 on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -18,4 +22,6 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - run: npm test
+      - run: npm run validate:examples
       - run: npm run check

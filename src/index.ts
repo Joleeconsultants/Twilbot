@@ -42,12 +42,19 @@ export interface RestTool {
 }
 
 /**
+ * Portable tenant-config contract version. AI-generated onboard JSON must set
+ * `version` to this value. Bump only when the public import shape changes.
+ */
+export const TENANT_CONFIG_VERSION = 1 as const;
+
+/**
  * Portable, secret-free configuration that a private tenant adapter can
- * export, validate, and import. Token aliases are identifiers only; the
- * adapter resolves their values from its own secret provider.
+ * export, validate, and import. This is the AI-onboard contract for the
+ * public engine. Token aliases are identifiers only; the adapter resolves
+ * their values from its own secret provider.
  */
 export interface TenantConfig {
-  version: 1;
+  version: typeof TENANT_CONFIG_VERSION;
   branding: {
     applicationName: string;
   };
@@ -71,7 +78,7 @@ export function validateTenantConfig(input: unknown): TenantConfigValidation {
   const errors: string[] = [];
   const value = input && typeof input === "object" && !Array.isArray(input) ? input as Record<string, unknown> : null;
   if (!value) return { ok: false, errors: ["Tenant configuration must be an object."] };
-  if (value.version !== 1) errors.push("Tenant configuration version must be 1.");
+  if (value.version !== TENANT_CONFIG_VERSION) errors.push(`Tenant configuration version must be ${TENANT_CONFIG_VERSION}.`);
 
   const branding = value.branding && typeof value.branding === "object" && !Array.isArray(value.branding)
     ? value.branding as Record<string, unknown>
@@ -141,7 +148,7 @@ export function validateTenantConfig(input: unknown): TenantConfigValidation {
   });
 
   if (errors.length) return { ok: false, errors };
-  return { ok: true, errors: [], config: { version: 1, branding: { applicationName }, restTools } };
+  return { ok: true, errors: [], config: { version: TENANT_CONFIG_VERSION, branding: { applicationName }, restTools } };
 }
 
 /** Parses an exported JSON tenant configuration without ever resolving aliases. */

@@ -40,15 +40,29 @@ requirements to the tenant adapter. That keeps a tenant's Workers AI model,
 call policy, and provider bindings private while the queue traversal behavior
 is shared and fully testable.
 
-Alias names such as `COMPANY_LOOKUP_TOKEN` may be stored as editable GitHub Actions variables in the private tenant repository. The value behind the alias must remain in the tenant's Cloudflare Secret Store, Worker secret, or GitHub Secret. The public engine receives neither.
+Alias names such as `COMPANY_LOOKUP_TOKEN` may be stored as editable GitHub Actions variables in the private tenant repository. The value behind the alias must remain in the private adapter's own secret provider. The public engine receives neither the mapping nor the value.
 
 The public engine never deploys a Worker and never receives tenant credentials.
 
-## Portable Tenant Configuration
+## AI Onboard Contract
 
-The versioned JSON format in [`examples/tenant-config.example.json`](examples/tenant-config.example.json) is the portable import/export contract for generic REST tools. A second independent fixture, [`examples/tenant-config.second-tenant.example.json`](examples/tenant-config.second-tenant.example.json), proves the contract is not shaped around a single customer.
+The versioned JSON files matching [`examples/tenant-config*.json`](examples/) are the portable import/export contract for generic REST tools. This is the machine-readable onboard shape an AI should emit. Contract version `1` is `TENANT_CONFIG_VERSION`. A second independent fixture, [`examples/tenant-config.second-tenant.example.json`](examples/tenant-config.second-tenant.example.json), proves the contract is not shaped around a single customer. See [`examples/README.md`](examples/README.md) and [`examples/tenant-config.schema.json`](examples/tenant-config.schema.json).
 
-Use `validateTenantConfig()` before saving a configuration, `exportTenantConfig()` to create a reviewable JSON export, and `parseTenantConfig()` when importing it. The format contains only application branding, REST request shape, and token *aliases*. It never contains domains, call data, bearer-token values, tenant recipients, or vendor-specific rules.
+Use `validateTenantConfig()` before saving a configuration, `exportTenantConfig()` to create a reviewable JSON export, and `parseTenantConfig()` when importing it. The format contains only application branding, REST request shape, and token *aliases*. It never contains call data, bearer-token values, tenant recipients, vendor preview keys, or vendor-specific rules.
+
+Validate generated JSON locally or in CI:
+
+```powershell
+npm test
+npm run validate:examples
+npm run check
+```
+
+The `check` GitHub Action is tests-only (`workflow_dispatch` included). Cursor can run:
+
+```powershell
+gh workflow run check
+```
 
 Every external integration is REST-only at this boundary. A private Worker resolves a configured `tokenAlias`, sends the HTTPS request, and owns retries, output delivery, and any client-specific systems. This package does not import vendor SDKs or require vendor bindings.
 
