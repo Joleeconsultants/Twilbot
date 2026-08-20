@@ -4138,17 +4138,18 @@
     function normalizeIfStatement(row, idx=0) {
       const thenItems = Array.isArray(row && row.thenItemIds) ? row.thenItemIds.map(normalizeEditorFlowId).filter(Boolean) : (Array.isArray(row && row.thenPromptIds) ? row.thenPromptIds.map(id => `prompt:${String(id)}`) : []);
       const elseItems = Array.isArray(row && row.elseItemIds) ? row.elseItemIds.map(normalizeEditorFlowId).filter(Boolean) : (Array.isArray(row && row.elsePromptIds) ? row.elsePromptIds.map(id => `prompt:${String(id)}`) : []);
+      const conditionMode = ['ai','time_range'].includes(String(row && (row.conditionMode || row.condition_type || row.conditionType) || 'variable')) ? String(row && (row.conditionMode || row.condition_type || row.conditionType)) : 'variable';
       const legacyTimeRange = String(row && row.rightValue || '').split('|', 2);
       return {
         id: String(row && row.id || `if-${idx+1}`),
-        conditionMode: ['ai','time_range'].includes(String(row && (row.conditionMode || row.condition_type || row.conditionType) || 'variable')) ? String(row && (row.conditionMode || row.condition_type || row.conditionType)) : 'variable',
+        conditionMode,
         aiCondition: simplifyLegacyAiConditionText(row && (row.aiCondition || row.ai_condition)),
         left: String(row && (row.left || row.conditionVariable) || 'caller_id'),
         operator: String(row && row.operator || 'is_empty'),
         rightType: 'value',
-        rightValue: String(row && row.rightValue || ''),
-        timeStart: String(row && row.timeStart || legacyTimeRange[0] || '09:00'),
-        timeEnd: String(row && row.timeEnd || legacyTimeRange[1] || '16:00'),
+        rightValue: conditionMode === 'time_range' ? '' : String(row && row.rightValue || '').replace(/^\d{2}:\d{2}\|\d{2}:\d{2}$/, ''),
+        timeStart: String(row && row.timeStart || (conditionMode === 'time_range' && legacyTimeRange[0]) || '09:00'),
+        timeEnd: String(row && row.timeEnd || (conditionMode === 'time_range' && legacyTimeRange[1]) || '16:00'),
         elseHidden: !!(row && row.elseHidden) && elseItems.length === 0,
         thenPromptIds: Array.isArray(row && row.thenPromptIds) ? row.thenPromptIds.map(String) : [],
         elsePromptIds: Array.isArray(row && row.elsePromptIds) ? row.elsePromptIds.map(String) : [],
