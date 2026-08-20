@@ -521,9 +521,16 @@
         btn.classList.toggle('active', active);
         btn.setAttribute('aria-selected', active ? 'true' : 'false');
       });
-      if(next === 'logs' && !callLogsInitialized) {
-        callLogsInitialized = true;
-        initCallLogsView();
+      if(next === 'logs') {
+        if(!callLogsInitialized) {
+          callLogsInitialized = true;
+          initCallLogsView();
+        } else {
+          // Background loading may finish before the tab is opened. Render its
+          // current in-memory result immediately instead of waiting for refresh.
+          renderCallLogList();
+          renderCallLogDetail(selectedCallLog);
+        }
       }
       if(options && options.replaceUrl === false) return;
       if(history) {
