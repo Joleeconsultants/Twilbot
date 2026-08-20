@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Twilbot tenant-config contract",
+  "description": "Version 1 portable, secret-free tenant configuration. This is the AI-onboard import shape for the public engine. Token aliases are identifiers only; never include secret values, vendor keys, or tenant phone numbers.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "branding"],
+  "properties": {
+    "version": {
+      "const": 1,
+      "description": "Contract version. AI-generated configs must use 1."
+    },
+    "branding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["applicationName"],
+      "properties": {
+        "applicationName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        }
+      }
+    },
+    "restTools": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["key", "scope", "method", "url", "parameters"],
+        "properties": {
+          "key": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]{0,63}$"
+          },
+          "scope": {
+            "type": "string",
+            "enum": ["live_variable", "output_sorter", "output_destination"]
+          },
+          "method": {
+            "type": "string",
+            "enum": ["GET", "POST", "PUT", "PATCH"]
+          },
+          "url": {
+            "type": "string",
+            "description": "HTTPS endpoint only. No credential-like query parameters."
+          },
+          "tokenAlias": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9_]{0,127}$",
+            "description": "Uppercase alias resolved by the private adapter. Never a token value."
+          },
+          "parameters": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["name", "where"],
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9_]{0,63}$"
+                },
+                "where": {
+                  "type": "string",
+                  "enum": ["query", "json", "header"]
+                },
+                "source": {
+                  "type": "string"
+                },
+                "value": {
+                  "type": "string"
+                },
+                "required": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

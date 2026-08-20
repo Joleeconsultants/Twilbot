@@ -20,6 +20,9 @@ const tenantMarkers = [
   /Unassigned customer/i,
   /TicketTitle/,
   /api\.atera\.jolee\.ai/i,
+  /elevenlabs/i,
+  /ELEVENLABS_API_KEY/i,
+  /Cloudflare Secret Store/i,
   /\+15169730331/,
   /\+15164340641/,
   /516[-.\s]?973[-.\s]?0331/,
@@ -56,6 +59,9 @@ test("public-tree scan covers the 3-repo split markers", () => {
     "CustomerID",
     "api.atera.jolee.ai",
     "app.atera.com",
+    "ElevenLabs",
+    "ELEVENLABS_API_KEY",
+    "Cloudflare Secret Store",
     "+15169730331",
     "+15164340641",
     "516-973-0331"
@@ -137,5 +143,7 @@ test("repository has CI checks and no tenant deploy workflows", async () => {
       assert.equal(expression.test(contents), false, `${name} must not contain ${expression}`);
     }
     assert.match(contents, /npm run check|npm test/);
+    assert.match(contents, /workflow_dispatch/);
+    assert.doesNotMatch(contents, /secrets:|ELEVENLABS|atera/i);
   }
 });

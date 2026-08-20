@@ -4,12 +4,13 @@
   "description": "Tenant-neutral call-flow and REST-output primitives for Twilbot Workers.",
   "type": "module",
   "exports": "./src/index.ts",
-  "files": ["src", "web", "README.md", "LICENSE", "SECURITY.md"],
+  "files": ["src", "web", "examples", "README.md", "LICENSE", "SECURITY.md"],
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "node --import tsx --test test/*.test.mjs",
+    "validate:examples": "node --import tsx scripts/validate-examples.mjs",
     "scan:public": "node scripts/scan-public-tree.mjs",
-    "check": "npm run typecheck && npm test && npm run scan:public"
+    "check": "npm run typecheck && npm test && npm run validate:examples && npm run scan:public"
   },
   "devDependencies": {
     "tsx": "^4.20.6",
