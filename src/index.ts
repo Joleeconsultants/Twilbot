@@ -14,7 +14,8 @@ export type ConditionOperator =
   | "equals"
   | "not_equals"
   | "contains"
-  | "not_contains";
+  | "not_contains"
+  | "time_between";
 
 export interface DeterministicCondition {
   left: string;
@@ -305,6 +306,25 @@ export function renderTemplate(template: string, values: Values): string {
   return template.replace(/{{\s*([a-zA-Z0-9_.-]+)\s*}}/g, (_match, key: string) => getPath(values, key));
 }
 
+function clockMinutes(value: string): number | null {
+  const match = clean(value).match(/^(\d{1,2}):(\d{2})$/);
+  if (!match) return null;
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  if (!Number.isInteger(hours) || !Number.isInteger(minutes) || hours < 0 || hours > 23 || minutes < 0 || minutes > 59) return null;
+  return hours * 60 + minutes;
+}
+
+/** Returns true when a 24-hour clock value is within an inclusive time window. */
+export function isTimeBetween(value: string, range: string): boolean {
+  const now = clockMinutes(value);
+  const [startValue, endValue] = clean(range).split("|", 2);
+  const start = clockMinutes(startValue || "");
+  const end = clockMinutes(endValue || "");
+  if (now === null || start === null || end === null) return false;
+  return start <= end ? now >= start && now <= end : now >= start || now <= end;
+}
+
 export function evaluateDeterministicCondition(condition: DeterministicCondition, values: Values): boolean {
   const left = getPath(values, condition.left).toLowerCase();
   const right = clean(condition.right).toLowerCase();
@@ -315,6 +335,7 @@ export function evaluateDeterministicCondition(condition: DeterministicCondition
     case "not_equals": return left !== right;
     case "contains": return left.includes(right);
     case "not_contains": return !left.includes(right);
+    case "time_between": return isTimeBetween(getPath(values, condition.left), clean(condition.right));
   }
 }
 

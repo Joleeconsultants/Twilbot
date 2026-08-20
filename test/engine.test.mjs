@@ -7,6 +7,7 @@ import {
   buildRestRequest,
   classifyConversationRelayEvent,
   evaluateDeterministicCondition,
+  isTimeBetween,
   formatOutputEmail,
   normalizeE164,
   outputRetryDelaySeconds,
@@ -26,6 +27,10 @@ test("renders only supplied tenant values", () => {
 test("evaluates deterministic conditions", () => {
   assert.equal(evaluateDeterministicCondition({ left: "company", operator: "contains", right: "example" }, values), true);
   assert.equal(evaluateDeterministicCondition({ left: "missing", operator: "is_empty" }, values), true);
+  assert.equal(isTimeBetween("09:00", "08:30|17:00"), true);
+  assert.equal(isTimeBetween("18:00", "08:30|17:00"), false);
+  assert.equal(isTimeBetween("00:30", "22:00|02:00"), true);
+  assert.equal(evaluateDeterministicCondition({ left: "current_time", operator: "time_between", right: "08:30|17:00" }, { current_time: "09:00" }), true);
 });
 
 test("builds a REST request without exposing a token in the URL", () => {

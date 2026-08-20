@@ -32,7 +32,7 @@
     .titleRow{display:grid;grid-template-columns:1fr;gap:10px;width:100%;min-width:0}
     .titleBrand{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;min-width:0}
     h1{margin:0;font-size:28px;line-height:1.05}.sub{margin-top:6px;color:var(--muted);font-size:14px}
-    .statusRow{grid-column:1;display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:flex-start;min-width:0}
+    .statusRow{grid-column:1;display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:flex-start;min-width:max-content}
     .topToggles{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:flex-end}
     .topToggle{display:flex;align-items:center;gap:10px;min-height:38px;padding:8px 12px;border-radius:999px;border:1px solid var(--edge);background:var(--panel2);color:var(--muted);font-size:12px}
     .topToggleLabel{font-size:12px;color:var(--slate);font-weight:600}
@@ -45,10 +45,10 @@
     .variableLauncher.open .dot{animation:none}
     .variablePanel{position:absolute;left:auto;right:0;top:calc(100% + 8px);z-index:40;width:max-content;min-width:100%;max-width:min(720px,calc(100vw - 48px));border:1px solid var(--edge);background:var(--panel2);border-radius:18px;padding:10px 12px;display:none;gap:10px;box-shadow:0 18px 50px rgba(0,0,0,.38);overflow:visible}
     .variablePanel.open{display:grid}
-    .variableHead{display:flex;justify-content:space-between;gap:10px;align-items:center}
+    .variableHead{display:flex;justify-content:space-between;gap:10px;align-items:center}.variableHeadActions{display:flex;align-items:center;justify-content:flex-end;gap:8px;min-width:0}
     .variableTitleGroup{display:flex;align-items:center;gap:10px;min-width:0;flex:1 1 auto;flex-wrap:wrap}
     .variableTitle{font-size:12px;color:var(--slate);font-weight:700;text-transform:uppercase;letter-spacing:.08em;white-space:nowrap;min-width:0;flex:0 0 auto}
-    .variableHint{font-size:11px;color:var(--muted);display:none;align-items:center;justify-content:flex-end;min-width:150px;text-align:right}.variableHint.active{display:flex;color:#93c5fd;font-weight:700}#variableGrid{grid-column:2;min-width:0;width:auto}
+    .variableHint{font-size:11px;color:var(--muted);display:none;align-items:center;justify-content:flex-end;min-width:0;text-align:right;white-space:nowrap}.variableHint.active{display:flex;color:#93c5fd;font-weight:700}#variableGrid{grid-column:2;min-width:0;width:auto}
     .variableChipRow{display:flex;gap:8px;flex-wrap:wrap}
     .variableChip{padding:7px 10px;border-radius:999px;border:1px solid rgba(96,165,250,.22);background:rgba(37,99,235,.08);color:#bfdbfe;font-size:12px;cursor:pointer}
     .variableGrid{display:grid;gap:8px}
@@ -306,6 +306,15 @@
       .apiUnifiedParamHeader{display:none !important}
       .apiUnifiedParamRow{grid-template-columns:1fr !important}
     }
+    /* Keep API parameter rows readable without a horizontal scroller. */
+    .apiUnifiedParamRows{overflow:visible;padding-bottom:0}
+    .apiUnifiedParamRow{display:grid;grid-template-columns:minmax(116px,1.08fr) minmax(116px,1fr) minmax(104px,.95fr) minmax(92px,.78fr) minmax(92px,.78fr) 88px;min-width:0}
+    .apiUnifiedParamRow .variableRow,.apiUnifiedParamRow .variableRow:first-child{min-width:0}
+    .apiUnifiedParamRow .variableMiniBtn{min-width:0;flex:initial}
+    @media(max-width:900px){.apiUnifiedParamRow{grid-template-columns:repeat(2,minmax(0,1fr))}.apiUnifiedParamRow .variableMiniBtn{grid-column:span 2}}
+    @media(max-width:560px){.apiUnifiedParamRow{grid-template-columns:1fr}.apiUnifiedParamRow .variableMiniBtn{grid-column:auto}}
+    @media(min-width:1061px){.statusRow{min-width:max-content}.topToggles{flex-wrap:nowrap}}
+    @media(min-width:681px) and (max-width:1060px){.topbar{grid-template-columns:minmax(0,1fr) auto;align-items:center}.topbarMain{grid-column:1 / -1}.statusRow{grid-column:1 / -1;justify-content:center;min-width:0}.topbarViewActions{grid-column:2;grid-row:3;justify-content:flex-end}.topToggles{justify-content:center;flex-wrap:nowrap}.topToggle{flex:0 0 auto}}
   </style>
 </head>
 <body class="booting">
@@ -1527,9 +1536,8 @@
                 <div class="variableTitle">Dynamic Variables</div>
                 <div class="variableChipRow">${visibleRows.filter(row => row.placeholder).map(row => `<button type="button" class="variableChip" data-variable-insert="${esc(row.key)}">${esc(row.placeholder)}</button>`).join('')}</div>
               </div>
-              <button type="button" class="variableMiniBtn" id="apiRequestOpenBtn">API Requests</button>
+              <div class="variableHeadActions"><div class="variableHint" id="variableHint"></div><button type="button" class="variableMiniBtn" id="apiRequestOpenBtn">API Requests</button></div>
             </div>
-            <div class="variableHint" id="variableHint"></div>
             <div class="variableGrid">${visibleRows.map(row => {
               if(String(row.key || '') === 'caller_id') {
                 return `
@@ -1998,7 +2006,7 @@
           </div>
           <button type="button" class="variableMiniBtn" data-add-api-param>Add parameter</button>
         </div>
-        <div class="apiUnifiedParamHeader"><span>Category</span><span>Identity</span><span>Parameter</span><span>Where</span><span>Data</span><span></span></div>
+        <div class="apiUnifiedParamHeader"><span>Category</span><span>Label</span><span>Parameter</span><span>Where</span><span>Data</span><span></span></div>
         <div class="apiUnifiedParamRows">${rows.map((row, idx) => renderUnifiedApiParamRow(row, idx)).join('')}</div>
         <details class="apiAdvanced">
           <summary>Advanced request preview</summary>
@@ -2024,7 +2032,7 @@
       return `<div class="apiUnifiedParamRow" data-api-param-row="${idx}" data-api-param-scope="${esc(scope)}">
         <label class="variableRow"><span class="variableLabel">Category</span><select class="variableSelect" data-api-param-field="scope" data-api-param-index="${idx}"><option value="live_variable"${scope === 'live_variable' ? ' selected' : ''}>Live Variable</option><option value="output_sorter"${scope === 'output_sorter' ? ' selected' : ''}>Output Sorter</option><option value="output_destination"${scope === 'output_destination' ? ' selected' : ''}>Output Destination</option></select></label>
         ${isLive
-          ? `<label class="variableRow"><span class="variableLabel">Variable key</span><input class="variableInput" data-api-param-field="tool_key" data-api-param-index="${idx}" value="${esc(key)}" placeholder="api_lookup" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"></label><input type="hidden" data-api-param-field="tool_label" data-api-param-index="${idx}" value="${esc(label || key)}">`
+          ? `<label class="variableRow"><span class="variableLabel">Variable label</span><input class="variableInput" data-api-param-field="tool_label" data-api-param-index="${idx}" value="${esc(label || key)}" placeholder="API Lookup" autocomplete="off"></label><input type="hidden" data-api-param-field="tool_key" data-api-param-index="${idx}" value="${esc(key)}">`
           : `<input type="hidden" data-api-param-field="tool_key" data-api-param-index="${idx}" value="${esc(defaults.key)}">${isDestination ? '' : `<label class="variableRow"><span class="variableLabel">Workflow label</span><input class="variableInput" data-api-param-field="tool_label" data-api-param-index="${idx}" value="${esc(label || defaults.label)}" placeholder="Output Sorter" autocomplete="off"></label>`}`}
         ${isDestination
           ? `<label class="variableRow"><span class="variableLabel">Switch label</span><input class="variableInput" data-api-param-field="tool_label" data-api-param-index="${idx}" value="${esc(label)}" placeholder="Send to API" autocomplete="off"></label>`
@@ -3441,15 +3449,8 @@
       updateCallDurationMeta(summary, monitor);
       shouldStickStreamToBottom = shouldStickStreamToBottom && streamIsNearBottom();
       if(!live) {
-        const completedHtml = buildCompletedCallHtml(summary);
-        if(completedHtml) {
-          retainedStreamHtml = completedHtml;
-          renderStreamMarkup(completedHtml, { stickToBottom: false });
-        } else if(retainedStreamHtml) {
-          renderStreamMarkup(retainedStreamHtml, { stickToBottom: false });
-        } else {
-          renderStreamMarkup('<div class="streamEmpty">No active call right now. The next live call will stream here.</div>', { stickToBottom: false });
-        }
+        retainedStreamHtml = '';
+        renderStreamMarkup('<div class="streamEmpty">No active call right now. The next live call will stream here.</div>', { stickToBottom: false });
         return;
       }
       const prompts = promptMapFromMonitor(monitor);
@@ -4134,14 +4135,17 @@
     function normalizeIfStatement(row, idx=0) {
       const thenItems = Array.isArray(row && row.thenItemIds) ? row.thenItemIds.map(normalizeEditorFlowId).filter(Boolean) : (Array.isArray(row && row.thenPromptIds) ? row.thenPromptIds.map(id => `prompt:${String(id)}`) : []);
       const elseItems = Array.isArray(row && row.elseItemIds) ? row.elseItemIds.map(normalizeEditorFlowId).filter(Boolean) : (Array.isArray(row && row.elsePromptIds) ? row.elsePromptIds.map(id => `prompt:${String(id)}`) : []);
+      const legacyTimeRange = String(row && row.rightValue || '').split('|', 2);
       return {
         id: String(row && row.id || `if-${idx+1}`),
-        conditionMode: String(row && (row.conditionMode || row.condition_type || row.conditionType) || 'variable') === 'ai' ? 'ai' : 'variable',
+        conditionMode: ['ai','time_range'].includes(String(row && (row.conditionMode || row.condition_type || row.conditionType) || 'variable')) ? String(row && (row.conditionMode || row.condition_type || row.conditionType)) : 'variable',
         aiCondition: simplifyLegacyAiConditionText(row && (row.aiCondition || row.ai_condition)),
         left: String(row && (row.left || row.conditionVariable) || 'caller_id'),
         operator: String(row && row.operator || 'is_empty'),
         rightType: 'value',
         rightValue: String(row && row.rightValue || ''),
+        timeStart: String(row && row.timeStart || legacyTimeRange[0] || ''),
+        timeEnd: String(row && row.timeEnd || legacyTimeRange[1] || ''),
         elseHidden: !!(row && row.elseHidden) && elseItems.length === 0,
         thenPromptIds: Array.isArray(row && row.thenPromptIds) ? row.thenPromptIds.map(String) : [],
         elsePromptIds: Array.isArray(row && row.elsePromptIds) ? row.elsePromptIds.map(String) : [],
@@ -4165,12 +4169,14 @@
     function serializeIfStatements() {
       return ifStatements.map(normalizeIfStatement).map(row => ({
         id: String(row.id || ''),
-        conditionMode: String(row.conditionMode || 'variable') === 'ai' ? 'ai' : 'variable',
+        conditionMode: ['ai','time_range'].includes(String(row.conditionMode || 'variable')) ? String(row.conditionMode) : 'variable',
         aiCondition: String(row.aiCondition || ''),
         left: String(row.left || 'caller_id'),
         operator: String(row.operator || 'is_empty'),
         rightType: 'value',
-        rightValue: String(row.rightValue || ''),
+        rightValue: String(row.conditionMode === 'time_range' ? `${row.timeStart || ''}|${row.timeEnd || ''}` : (row.rightValue || '')),
+        timeStart: String(row.timeStart || ''),
+        timeEnd: String(row.timeEnd || ''),
         thenPromptIds: branchItemIds(row, 'then').filter(id => id.startsWith('prompt:')).map(id => id.slice(7)),
         elsePromptIds: branchItemIds(row, 'else').filter(id => id.startsWith('prompt:')).map(id => id.slice(7)),
         thenItemIds: branchItemIds(row, 'then'),
@@ -4217,7 +4223,9 @@
     }
 
     function variableOptions(selected='') {
-      const rows = normalizePromptVariables(promptVariables).filter(row => String(row.key || '') !== 'caller_id_country_code');
+      const rows = normalizePromptVariables(promptVariables)
+        .filter(row => String(row.key || '') !== 'caller_id_country_code')
+        .sort((a, b) => String(a.label || a.key).localeCompare(String(b.label || b.key)));
       return rows.map(row => `<option value="${esc(row.key)}" ${String(row.key) === String(selected) ? 'selected' : ''}>${esc(row.label || row.key)}</option>`).join('');
     }
 
@@ -4323,13 +4331,17 @@
 
 
     function ifConditionControls(row) {
-      const mode = String(row.conditionMode || 'variable') === 'ai' ? 'ai' : 'variable';
+      const mode = ['ai','time_range'].includes(String(row.conditionMode || 'variable')) ? String(row.conditionMode) : 'variable';
       const modePicker = `<span class="ifConditionPill exprOp"><select data-if-field="conditionMode" data-id="${esc(row.id)}">
-          <option value="variable" ${mode === 'variable' ? 'selected' : ''}>Variable condition</option>
           <option value="ai" ${mode === 'ai' ? 'selected' : ''}>AI condition</option>
+          <option value="time_range" ${mode === 'time_range' ? 'selected' : ''}>Time range</option>
+          <option value="variable" ${mode === 'variable' ? 'selected' : ''}>Variable condition</option>
         </select></span>`;
       if(mode === 'ai') {
         return `${modePicker}<span class="ifAiConditionWrap"><textarea data-if-field="aiCondition" data-id="${esc(row.id)}" placeholder="Example: Ask for the company name only if the caller says they are calling from a different company and did not already provide it.">${esc(row.aiCondition || '')}</textarea></span>`;
+      }
+      if(mode === 'time_range') {
+        return `${modePicker}<span class="ifConditionPill exprSide">time of day between</span><span class="ifConditionPill exprSide"><input type="time" data-if-field="timeStart" data-id="${esc(row.id)}" value="${esc(row.timeStart || '')}"></span><span class="ifConditionPill exprSide">and</span><span class="ifConditionPill exprSide"><input type="time" data-if-field="timeEnd" data-id="${esc(row.id)}" value="${esc(row.timeEnd || '')}"></span>`;
       }
       const valueControl = ['is_empty','is_not_empty'].includes(row.operator) ? '' : `<span class="ifConditionPill exprSide"><input data-if-field="rightValue" data-id="${esc(row.id)}" value="${esc(row.rightValue)}" placeholder="value"></span>`;
       return `${modePicker}
@@ -4443,9 +4455,14 @@
       if(!row || !field) return;
       row[field] = ev.currentTarget.value;
       row.rightType = 'value';
+      if(row.conditionMode === 'time_range') {
+        row.left = 'current_time';
+        row.operator = 'time_between';
+        row.rightValue = `${row.timeStart || ''}|${row.timeEnd || ''}`;
+      }
       saveIfStatements();
       queueDraftSave(true);
-      if(field === 'operator' || field === 'conditionMode') renderPrompts();
+      if(field === 'operator' || field === 'conditionMode' || field === 'timeStart' || field === 'timeEnd') renderPrompts();
     }
 
     function onIfStatementAddPrompt(ev) {

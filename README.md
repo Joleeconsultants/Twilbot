@@ -7,7 +7,8 @@ This package intentionally contains no tenant domains, prompt text, phone number
 ## Includes
 
 - Prompt-template interpolation with `{{variable}}` support.
-- Deterministic condition evaluation.
+- Deterministic condition evaluation, including ordinary comparisons and
+  time-of-day ranges (with overnight-window support).
 - Callback-driven prompt-graph advancement that private adapters use for live calls.
 - Generic REST request shaping for live variables, output sorters, and output destinations.
 - Generic post-call output payload and plain-text/email formatting.
