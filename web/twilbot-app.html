@@ -167,6 +167,7 @@
     .btnAction.warn{border-color:rgba(239,68,68,.3);background:rgba(127,29,29,.16);color:#fecaca}.btnAction.subtle{border-color:rgba(203,213,225,.34);background:rgba(148,163,184,.16);color:#f1f5f9}
     .btnAction[disabled],.btnPlay[disabled],.btnAdd[disabled],.btnMove[disabled]{opacity:.5;cursor:not-allowed}
     .outputGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px}.outputCard{display:flex;align-items:center;justify-content:space-between;gap:14px;border:1px solid rgba(148,163,184,.14);border-radius:18px;background:rgba(11,18,32,.72);padding:16px 18px}.outputMeta{display:grid;gap:4px}.outputName{font-size:15px;font-weight:700}.outputState{font-size:12px;color:var(--muted)}.outputSorterPanel{grid-column:1/-1;border:1px solid rgba(96,165,250,.14);border-radius:18px;background:rgba(11,18,32,.5);padding:12px;display:grid;gap:10px}.outputSorterHead{display:flex;align-items:center;justify-content:space-between;gap:12px}.outputSorterTitle{font-size:14px;font-weight:900}.outputSorterHint{font-size:12px;color:var(--muted);line-height:1.35}.outputSorterList{display:grid;gap:10px}.switch{position:relative;display:inline-block;width:54px;height:32px;flex:0 0 auto}.switch input{opacity:0;width:0;height:0}.slider{position:absolute;cursor:pointer;inset:0;background:rgba(71,85,105,.8);transition:.2s;border-radius:999px;border:1px solid rgba(148,163,184,.18)}.slider:before{content:'';position:absolute;height:24px;width:24px;left:3px;top:3px;background:white;transition:.2s;border-radius:50%;box-shadow:0 4px 14px rgba(0,0,0,.28)}input:checked + .slider{background:linear-gradient(135deg,#34d399,#22c55e)}input[data-output-key="email_enabled"]:checked + .slider{background:linear-gradient(135deg,#8b5cf6,#a855f7)}input:checked + .slider:before{transform:translateX(22px)}input:disabled + .slider{opacity:.45;cursor:not-allowed}.outputSwitchBtn{position:relative;display:inline-block;width:54px;height:32px;flex:0 0 auto;padding:0;border:0;background:none;cursor:pointer;-webkit-tap-highlight-color:transparent}.outputSwitchBtn[disabled]{cursor:not-allowed}.outputSwitchBtn .slider{position:absolute;inset:0}.outputSwitchBtn.is-on .slider{background:linear-gradient(135deg,#34d399,#22c55e)}.outputSwitchBtn[data-output-key="email_enabled"].is-on .slider{background:linear-gradient(135deg,#8b5cf6,#a855f7)}.outputSwitchBtn.is-on .slider:before{transform:translateX(22px)}.outputSwitchBtn[disabled] .slider{opacity:.45;cursor:not-allowed}.outputSwitchBtn.needs-auth .slider{opacity:.75}.outputNote{margin-top:10px;font-size:12px;color:var(--muted)}
+    .outputSwitchBtn[data-output-color="red"].is-on .slider{background:linear-gradient(135deg,#fb7185,#ef4444)}.outputSwitchBtn[data-output-color="blue"].is-on .slider{background:linear-gradient(135deg,#60a5fa,#2563eb)}.outputSwitchBtn[data-output-color="purple"].is-on .slider{background:linear-gradient(135deg,#8b5cf6,#a855f7)}.outputSwitchBtn[data-output-color="orange"].is-on .slider{background:linear-gradient(135deg,#f59e0b,#f97316)}
     .hidden{display:none!important}.integrationShell{width:min(1800px,calc(100vw - 48px));max-width:none;margin:0 auto;padding:14px}.integrationHero{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:14px;padding:16px;border:1px solid var(--edge);border-radius:22px;background:linear-gradient(180deg,rgba(20,29,48,.96),rgba(17,24,39,.96));box-shadow:0 14px 34px rgba(0,0,0,.18)}.integrationTitle{margin:0;font-size:28px;line-height:1.05}.integrationLink{border:1px solid rgba(96,165,250,.22);background:rgba(37,99,235,.1);color:#bfdbfe;text-decoration:none;border-radius:999px;padding:9px 12px;font-size:12px;font-weight:700}.integrationNamePanel{max-width:760px}.integrationForm{display:grid;gap:12px}.integrationLabel{display:grid;gap:7px;color:var(--slate);font-size:13px;font-weight:700}.integrationTextarea,.integrationInput{width:100%;border-radius:14px;border:1px solid rgba(148,163,184,.14);background:rgba(10,16,30,.88);color:var(--text);font:inherit;padding:11px 12px;line-height:1.45}.integrationTextarea{min-height:98px;resize:vertical}.integrationInput{min-height:44px}.integrationActions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.integrationBtn{border:1px solid rgba(52,211,153,.35);background:rgba(5,150,105,.14);color:#d1fae5;border-radius:14px;padding:10px 14px;font-size:13px;font-weight:800;cursor:pointer}.integrationBtn[disabled]{opacity:.55;cursor:not-allowed}.integrationResult{display:grid;gap:12px;margin-top:14px}.integrationOutput{border:1px solid rgba(52,211,153,.24);border-radius:16px;background:rgba(5,150,105,.08);padding:14px;font-size:18px;line-height:1.35;font-weight:800;word-break:break-word}.integrationOutput.miss{border-color:rgba(251,191,36,.24);background:rgba(120,53,15,.12)}.integrationMeta{border:1px solid rgba(96,165,250,.2);border-radius:16px;background:rgba(15,23,42,.68);padding:12px;color:#bfdbfe;font-size:13px;line-height:1.45;display:grid;gap:8px}.integrationMetaTitle{font-weight:900;color:#e0f2fe}.integrationMetaGrid{display:grid;gap:6px}.integrationMetaRow{display:grid;grid-template-columns:112px 1fr;gap:10px}.integrationMetaKey{color:#93a4bd;font-weight:800}.integrationMetaValue{color:#dbeafe;word-break:break-word}.integrationError{color:#fecaca}
     .addPromptBubble{margin-top:0;width:100%;min-height:58px;border-radius:16px;border:1px solid rgba(148,163,184,.1);background:rgba(10,16,30,.88);color:#cbd5e1;font-size:15px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
     .promptBottomActions{display:grid;grid-template-columns:1fr;gap:var(--flow-gap)}
@@ -485,7 +486,7 @@
     let pendingEmailEntryValue = '';
     let variablePanelOpen = false;
     let draftBusy = false;
-    let autoUpdatePrompts = false;
+    let autoUpdatePrompts = true;
     let promptDraftSettingsLoaded = false;
     let autoUpdateTimer = null;
     let draftSaveTimer = null;
@@ -1058,12 +1059,18 @@
       return {
         key: key || `sorter_${index + 1}`,
         label: String(input.label || input.key || `Sorter ${index + 1}`).trim() || `Sorter ${index + 1}`,
+        enabled: input.enabled !== false,
         rest: normalizeRestVariableConfig(input.rest)
       };
     }
 
     function normalizeOutputSorters(rows) {
       return (Array.isArray(rows) ? rows : []).map((row, index) => normalizeOutputSorter(row, index)).filter(row => row.key);
+    }
+
+    function normalizeOutputDestinationColor(value) {
+      const color = String(value || '').trim().toLowerCase();
+      return ['green', 'red', 'blue', 'purple', 'orange'].includes(color) ? color : 'green';
     }
 
     function normalizeOutputDestination(row, index=0) {
@@ -1073,6 +1080,7 @@
         key: key || `destination_${index + 1}`,
         label: String(input.label || input.key || `Destination ${index + 1}`).trim() || `Destination ${index + 1}`,
         enabled: !!input.enabled,
+        color: normalizeOutputDestinationColor(input.color),
         rest: normalizeRestVariableConfig(input.rest)
       };
     }
@@ -1972,10 +1980,10 @@
         }, index))
         .filter(Boolean);
       const sorters = normalizeOutputSorters(lastOutputs.rest_sorters)
-        .map((row, index) => safeTool({ scope:'output_sorter', key: row.key, label: row.label, enabled:true, rest: row.rest }, index))
+        .map((row, index) => safeTool({ scope:'output_sorter', key: row.key, label: row.label, enabled: row.enabled !== false, rest: row.rest }, index))
         .filter(Boolean);
       const destinations = normalizeOutputDestinations(lastOutputs.output_destinations)
-        .map((row, index) => safeTool({ scope:'output_destination', key: row.key, label: row.label, enabled: !!row.enabled, rest: row.rest }, index))
+        .map((row, index) => safeTool({ scope:'output_destination', key: row.key, label: row.label, enabled: true, output_enabled: !!row.enabled, color: row.color, rest: row.rest }, index))
         .filter(Boolean);
       return [...live, ...sorters, ...destinations];
     }
@@ -2024,6 +2032,8 @@
           scope: safeTool.scope,
           tool_label: safeTool.label,
           tool_key: safeTool.key,
+          tool_enabled: safeTool.enabled !== false ? 'yes' : 'no',
+          tool_color: safeTool.color || 'green',
           result_path: (safeTool.rest || {}).result_path || safeTool.result_path || 'value'
         };
         if(params.length) params.forEach(param => rows.push({ ...meta, ...param }));
@@ -2063,12 +2073,18 @@
       const isDestination = scope === 'output_destination';
       const key = String(param.tool_key || param.key || defaults.key || '').trim();
       const label = String(param.tool_label || param.label || (isLive ? key : defaults.label) || '').trim();
+      const enabled = String(param.tool_enabled || 'yes').toLowerCase() !== 'no';
+      const color = normalizeOutputDestinationColor(param.tool_color);
       const resultPath = String(param.result_path || defaults.result_path || 'value').trim();
       const sourceValue = String(row.source || row.value || '').trim();
       return `<div class="apiUnifiedParamRow" data-api-param-row="${idx}" data-api-param-scope="${esc(scope)}">
         <label class="variableRow"><span class="variableLabel">Category</span><select class="variableSelect" data-api-param-field="scope" data-api-param-index="${idx}"><option value="live_variable"${scope === 'live_variable' ? ' selected' : ''}>Live Variable</option><option value="output_sorter"${scope === 'output_sorter' ? ' selected' : ''}>Output Sorter</option><option value="output_destination"${scope === 'output_destination' ? ' selected' : ''}>Output Destination</option></select></label>
         <label class="variableRow"><span class="variableLabel">${isLive ? 'Variable label' : isDestination ? 'Switch label' : 'Workflow label'}</span><input class="variableInput" data-api-param-field="tool_label" data-api-param-index="${idx}" value="${esc(label || defaults.label)}" placeholder="${isLive ? 'API Lookup' : isDestination ? 'Send to API' : 'Output Sorter'}" autocomplete="off"></label>
-        <label class="variableRow"><span class="variableLabel">Key</span><input class="variableInput" data-api-param-field="tool_key" data-api-param-index="${idx}" value="${esc(key)}" placeholder="${esc(defaults.key)}" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"></label>
+        ${isLive
+          ? `<label class="variableRow"><span class="variableLabel">Variable key</span><input class="variableInput" data-api-param-field="tool_key" data-api-param-index="${idx}" value="${esc(key)}" placeholder="${esc(defaults.key)}" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"></label>`
+          : isDestination
+            ? `<input type="hidden" data-api-param-field="tool_key" data-api-param-index="${idx}" value="${esc(key)}"><label class="variableRow"><span class="variableLabel">Color</span><select class="variableSelect" data-api-param-field="tool_color" data-api-param-index="${idx}"><option value="green"${color === 'green' ? ' selected' : ''}>Green</option><option value="red"${color === 'red' ? ' selected' : ''}>Red</option><option value="blue"${color === 'blue' ? ' selected' : ''}>Blue</option><option value="purple"${color === 'purple' ? ' selected' : ''}>Purple</option><option value="orange"${color === 'orange' ? ' selected' : ''}>Orange</option></select></label>`
+            : `<input type="hidden" data-api-param-field="tool_key" data-api-param-index="${idx}" value="${esc(key)}"><label class="variableRow"><span class="variableLabel">Enabled</span><select class="variableSelect" data-api-param-field="tool_enabled" data-api-param-index="${idx}"><option value="yes"${enabled ? ' selected' : ''}>Yes</option><option value="no"${!enabled ? ' selected' : ''}>No</option></select></label>`}
         <input type="hidden" data-api-param-field="result_path" data-api-param-index="${idx}" value="${esc(isLive ? resultPath : '')}">
         <label class="variableRow"><span class="variableLabel">Parameter</span><input class="variableInput" data-api-param-field="name" data-api-param-index="${idx}" value="${esc(row.name || '')}" placeholder="Name"></label>
         <label class="variableRow"><span class="variableLabel">Where</span><select class="variableSelect" data-api-param-field="where" data-api-param-index="${idx}"><option value="query"${row.where === 'query' ? ' selected' : ''}>Query</option><option value="json"${row.where === 'json' ? ' selected' : ''}>JSON</option><option value="header"${row.where === 'header' ? ' selected' : ''}>Header</option></select></label>
@@ -2151,6 +2167,8 @@
         key: key || `${keyPrefix}_${index + 1}`,
         label: String(input.label || input.name || input.key || `${scopeLabel(scope)} ${index + 1}`).trim(),
         enabled: input.enabled !== false,
+        output_enabled: input.output_enabled === true,
+        color: normalizeOutputDestinationColor(input.color),
         rest
       };
     }
@@ -2428,6 +2446,8 @@
         const slug = (value) => String(value || '').trim().toLowerCase().replace(/[^a-z0-9_.-]+/g, '_').replace(/^_+|_+$/g, '');
         const rawToolLabel = String(param.tool_label || '').trim();
         const rawToolKey = String(param.tool_key || '').trim();
+        const rawToolEnabled = String(param.tool_enabled || 'yes').toLowerCase();
+        const rawToolColor = normalizeOutputDestinationColor(param.tool_color);
         const toolLabel = scope === 'output_destination'
           ? (rawToolLabel || defaults.label)
           : scope === 'live_variable'
@@ -2437,9 +2457,13 @@
         const resultPath = String(param.result_path || '').trim();
         delete param.tool_label;
         delete param.tool_key;
+        delete param.tool_enabled;
+        delete param.tool_color;
         delete param.result_path;
         tool.label = toolLabel;
         tool.key = toolKey;
+        tool.enabled = scope === 'output_sorter' ? rawToolEnabled !== 'no' : true;
+        tool.color = rawToolColor;
         if(scope === 'live_variable') tool.rest.result_path = resultPath || defaults.result_path || 'value';
         const description = String(param.description || '').trim();
         normalizeApiParamValueSource(param);
@@ -2450,7 +2474,7 @@
       scopes.forEach(scope => {
         const tool = byScope[scope];
         const hasParams = (tool.rest.params || []).length > 0 && (scope !== 'live_variable' || (tool.rest.params || []).some(param => param.name || param.source || param.value));
-        tool.enabled = hasParams;
+        tool.enabled = scope === 'output_sorter' ? (tool.enabled && hasParams) : hasParams;
         tool.rest.enabled = hasParams;
         if(hasParams && !(tool.rest.params || []).some(param => String(param.name || '').toLowerCase() === 'category')) {
           tool.rest.params.unshift({ name:'category', where:'json', value:scope, required:true });
@@ -2494,8 +2518,8 @@
     }
 
     function applyApiToolsToState(tools) {
-      const normalizedTools = (Array.isArray(tools) ? tools : []).map((tool, index) => normalizeApiTool(tool, index)).filter(tool => tool.key && tool.enabled && ((tool.rest || {}).enabled));
-      const liveTools = normalizedTools.filter(tool => tool.scope === 'live_variable');
+      const normalizedTools = (Array.isArray(tools) ? tools : []).map((tool, index) => normalizeApiTool(tool, index)).filter(tool => tool.key && ((tool.rest || {}).enabled));
+      const liveTools = normalizedTools.filter(tool => tool.scope === 'live_variable' && tool.enabled);
       const sorterTools = normalizedTools.filter(tool => tool.scope === 'output_sorter');
       const destinationTools = normalizedTools.filter(tool => tool.scope === 'output_destination');
       const nonRestVars = normalizePromptVariables(promptVariables).filter(row => !isRestVariable(row));
@@ -2513,11 +2537,12 @@
       const existingDestinations = Object.fromEntries(normalizeOutputDestinations(lastOutputs.output_destinations).map(row => [row.key, row]));
       lastOutputs = {
         ...lastOutputs,
-        rest_sorters: normalizeOutputSorters(sorterTools.map(tool => ({ key: tool.key, label: tool.label, rest: { ...normalizeRestVariableConfig(tool.rest), enabled: true } }))),
+        rest_sorters: normalizeOutputSorters(sorterTools.map(tool => ({ key: tool.key, label: tool.label, enabled: tool.enabled !== false, rest: { ...normalizeRestVariableConfig(tool.rest), enabled: true } }))),
         output_destinations: normalizeOutputDestinations(destinationTools.map(tool => ({
           key: tool.key,
           label: tool.label || tool.key,
           enabled: existingDestinations[tool.key] ? !!existingDestinations[tool.key].enabled : false,
+          color: tool.color || (existingDestinations[tool.key] || {}).color || 'green',
           rest: { ...normalizeRestVariableConfig(tool.rest), enabled: true, method: 'POST' }
         })))
       };
@@ -2920,12 +2945,12 @@
       }
       const rows = [
         { key:'email_enabled', label:'Send Email' },
-        ...destinationRows.map(row => ({ key: outputDestinationSwitchKey(row.key), label: row.label || row.key }))
+        ...destinationRows.map(row => ({ key: outputDestinationSwitchKey(row.key), label: row.label || row.key, color: row.color || 'green' }))
       ];
       const wantedKeys = rows.map(row => row.key);
       const hasControls = keys.length === wantedKeys.length && wantedKeys.every(key => keys.includes(key));
       if(!hasControls) {
-        outputGridEl.innerHTML = `<div class="topToggles">${rows.map(row => `<div class="topToggle"><span class="topToggleLabel">${row.label}</span><button type="button" class="outputSwitchBtn" data-output-key="${row.key}" role="switch" aria-checked="false" aria-label="${row.label}"><span class="slider"></span></button></div>`).join('')}</div>`;
+        outputGridEl.innerHTML = `<div class="topToggles">${rows.map(row => `<div class="topToggle"><span class="topToggleLabel">${row.label}</span><button type="button" class="outputSwitchBtn" data-output-key="${row.key}"${row.color ? ` data-output-color="${row.color}"` : ''} role="switch" aria-checked="false" aria-label="${row.label}"><span class="slider"></span></button></div>`).join('')}</div>`;
       }
       renderOutputSorterPanel();
       outputGridEl.querySelectorAll('button[data-output-key]').forEach(el => {
@@ -5548,7 +5573,7 @@ ${conditionText}`);
         if(!data.ok) throw new Error(data.error || 'drafts failed');
         const draftsPayload = ((data||{}).drafts) || {};
         applyServerFlowState(draftsPayload);
-        autoUpdatePrompts = !!draftsPayload.auto_update_prompts;
+        autoUpdatePrompts = Object.prototype.hasOwnProperty.call(draftsPayload, 'auto_update_prompts') ? !!draftsPayload.auto_update_prompts : true;
         currentPhoneVoiceId = String(((draftsPayload.voice || {}) || {}).voice_id || '').trim();
         const serverVariables = normalizePromptVariables((draftsPayload.variables) || []);
         promptVariables = mergePromptVariablesWithLocal(serverVariables);
@@ -5596,7 +5621,7 @@ ${conditionText}`);
         const generatedPrompt = (data||{}).prompt || {};
         const draftsPayload = (((data||{}).drafts)||{});
         promptDraftSettingsLoaded = true;
-        autoUpdatePrompts = !!(draftsPayload.auto_update_prompts);
+        autoUpdatePrompts = Object.prototype.hasOwnProperty.call(draftsPayload, 'auto_update_prompts') ? !!draftsPayload.auto_update_prompts : true;
         currentPhoneVoiceId = String(((draftsPayload.voice || {}) || {}).voice_id || currentPhoneVoiceId || '').trim();
         const target = draftPrompts.find(p => String(p.id) === String(id));
         if(target) {
