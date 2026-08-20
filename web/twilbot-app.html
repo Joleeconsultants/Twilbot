@@ -307,8 +307,9 @@
       .apiUnifiedParamRow{grid-template-columns:1fr !important}
     }
     /* Keep API parameter rows readable without a horizontal scroller. */
+    .ifTimeText{color:var(--muted);font-size:13px;white-space:nowrap;align-self:center}
     .apiUnifiedParamRows{overflow:visible;padding-bottom:0}
-    .apiUnifiedParamRow{display:grid;grid-template-columns:minmax(116px,1.08fr) minmax(116px,1fr) minmax(104px,.95fr) minmax(92px,.78fr) minmax(92px,.78fr) 88px;min-width:0}
+    .apiUnifiedParamRow{display:grid;grid-template-columns:minmax(96px,1fr) minmax(102px,1fr) minmax(88px,.82fr) minmax(88px,.82fr) minmax(78px,.72fr) minmax(78px,.72fr) 76px;min-width:0}
     .apiUnifiedParamRow .variableRow,.apiUnifiedParamRow .variableRow:first-child{min-width:0}
     .apiUnifiedParamRow .variableMiniBtn{min-width:0;flex:initial}
     @media(max-width:900px){.apiUnifiedParamRow{grid-template-columns:repeat(2,minmax(0,1fr))}.apiUnifiedParamRow .variableMiniBtn{grid-column:span 2}}
@@ -950,6 +951,7 @@
         { key:'caller_id', label:'Caller ID', placeholder:'{{caller_id}}', value:'', source:'manual' },
         { key:'caller_id_country_code', label:'Caller ID country code', placeholder:'', value:'+1', source:'manual', uiOnly:true },
         { key:'emails', label:'Emails', placeholder:'', value:'', source:'manual' },
+        { key:'current_time', label:'Time Range', placeholder:'', value:'', source:'system', uiOnly:true, system:true },
       ];
     }
 
@@ -1323,7 +1325,7 @@
     }
 
     function dynamicVariableUsageLabel(rows) {
-      const tracked = (Array.isArray(rows) ? rows : []).filter(row => String(row.key || '') !== 'caller_id_country_code');
+      const tracked = (Array.isArray(rows) ? rows : []).filter(row => String(row.key || '') !== 'caller_id_country_code' && !row.system);
       const filled = tracked.filter(row => String(row.value || '').trim()).length;
       const empty = Math.max(0, tracked.length - filled);
       const parts = [];
@@ -1493,6 +1495,12 @@
               </label>`;
     }
 
+    function renderSystemVariableControl(row) {
+      const key = String((row || {}).key || '').trim();
+      const label = String((row || {}).label || key || 'System variable').trim();
+      return `<div class="variableRow variableSystemRow"><span class="variableLabel">${esc(label)}</span><span class="variableSystemValue">Available for Time range If blocks</span></div>`;
+    }
+
     function renderVariables() {
       const rows = normalizePromptVariables(promptVariables);
       promptVariables = rows;
@@ -1551,6 +1559,7 @@
             </label>`;
     }
               if(String(row.key || '') === 'emails') return renderEmailRecipientControl(row);
+              if(row.system) return renderSystemVariableControl(row);
               if(isRestVariable(row)) return renderRestVariableControl(row);
               return `
               <label class="variableRow">
@@ -1733,8 +1742,15 @@
       const hint = document.getElementById('variableHint');
       const showHint = (message, active=true) => {
         if(!hint) return;
+        if(window.__twilbotVariableHintTimer) window.clearTimeout(window.__twilbotVariableHintTimer);
         hint.textContent = message || '';
         hint.classList.toggle('active', !!active && !!message);
+        if(message && active) {
+          window.__twilbotVariableHintTimer = window.setTimeout(() => {
+            hint.textContent = '';
+            hint.classList.remove('active');
+          }, 3000);
+        }
       };
       const textToCopy = `{{${token}}}`;
       try {
@@ -2007,7 +2023,7 @@
           </div>
           <button type="button" class="variableMiniBtn" data-add-api-param>Add parameter</button>
         </div>
-        <div class="apiUnifiedParamHeader"><span>Category</span><span>Label</span><span>Parameter</span><span>Where</span><span>Data</span><span></span></div>
+        <div class="apiUnifiedParamHeader"><span>Category</span><span>Label</span><span>Key</span><span>Parameter</span><span>Where</span><span>Data</span><span></span></div>
         <div class="apiUnifiedParamRows">${rows.map((row, idx) => renderUnifiedApiParamRow(row, idx)).join('')}</div>
         <details class="apiAdvanced">
           <summary>Advanced request preview</summary>
@@ -2032,12 +2048,8 @@
       const sourceValue = String(row.source || row.value || '').trim();
       return `<div class="apiUnifiedParamRow" data-api-param-row="${idx}" data-api-param-scope="${esc(scope)}">
         <label class="variableRow"><span class="variableLabel">Category</span><select class="variableSelect" data-api-param-field="scope" data-api-param-index="${idx}"><option value="live_variable"${scope === 'live_variable' ? ' selected' : ''}>Live Variable</option><option value="output_sorter"${scope === 'output_sorter' ? ' selected' : ''}>Output Sorter</option><option value="output_destination"${scope === 'output_destination' ? ' selected' : ''}>Output Destination</option></select></label>
-        ${isLive
-          ? `<label class="variableRow"><span class="variableLabel">Variable label</span><input class="variableInput" data-api-param-field="tool_label" data-api-param-index="${idx}" value="${esc(label || key)}" placeholder="API Lookup" autocomplete="off"></label><input type="hidden" data-api-param-field="tool_key" data-api-param-index="${idx}" value="${esc(key)}">`
-          : `<input type="hidden" data-api-param-field="tool_key" data-api-param-index="${idx}" value="${esc(defaults.key)}">${isDestination ? '' : `<label class="variableRow"><span class="variableLabel">Workflow label</span><input class="variableInput" data-api-param-field="tool_label" data-api-param-index="${idx}" value="${esc(label || defaults.label)}" placeholder="Output Sorter" autocomplete="off"></label>`}`}
-        ${isDestination
-          ? `<label class="variableRow"><span class="variableLabel">Switch label</span><input class="variableInput" data-api-param-field="tool_label" data-api-param-index="${idx}" value="${esc(label)}" placeholder="Send to API" autocomplete="off"></label>`
-          : ''}
+        <label class="variableRow"><span class="variableLabel">${isLive ? 'Variable label' : isDestination ? 'Switch label' : 'Workflow label'}</span><input class="variableInput" data-api-param-field="tool_label" data-api-param-index="${idx}" value="${esc(label || defaults.label)}" placeholder="${isLive ? 'API Lookup' : isDestination ? 'Send to API' : 'Output Sorter'}" autocomplete="off"></label>
+        <label class="variableRow"><span class="variableLabel">Key</span><input class="variableInput" data-api-param-field="tool_key" data-api-param-index="${idx}" value="${esc(key)}" placeholder="${esc(defaults.key)}" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"></label>
         <input type="hidden" data-api-param-field="result_path" data-api-param-index="${idx}" value="${esc(isLive ? resultPath : '')}">
         <label class="variableRow"><span class="variableLabel">Parameter</span><input class="variableInput" data-api-param-field="name" data-api-param-index="${idx}" value="${esc(row.name || '')}" placeholder="Name"></label>
         <label class="variableRow"><span class="variableLabel">Where</span><select class="variableSelect" data-api-param-field="where" data-api-param-index="${idx}"><option value="query"${row.where === 'query' ? ' selected' : ''}>Query</option><option value="json"${row.where === 'json' ? ' selected' : ''}>JSON</option><option value="header"${row.where === 'header' ? ' selected' : ''}>Header</option></select></label>
@@ -2402,11 +2414,7 @@
           : scope === 'live_variable'
             ? (rawToolLabel || rawToolKey || defaults.key)
             : (rawToolLabel || defaults.label);
-        const toolKey = scope === 'live_variable'
-          ? (slug(rawToolKey || toolLabel) || defaults.key)
-          : scope === 'output_destination'
-            ? (slug(rawToolLabel || defaults.key) || defaults.key)
-            : defaults.key;
+        const toolKey = slug(rawToolKey || toolLabel || defaults.key) || defaults.key;
         const resultPath = String(param.result_path || '').trim();
         delete param.tool_label;
         delete param.tool_key;
@@ -4145,8 +4153,8 @@
         operator: String(row && row.operator || 'is_empty'),
         rightType: 'value',
         rightValue: String(row && row.rightValue || ''),
-        timeStart: String(row && row.timeStart || legacyTimeRange[0] || ''),
-        timeEnd: String(row && row.timeEnd || legacyTimeRange[1] || ''),
+        timeStart: String(row && row.timeStart || legacyTimeRange[0] || '09:00'),
+        timeEnd: String(row && row.timeEnd || legacyTimeRange[1] || '16:00'),
         elseHidden: !!(row && row.elseHidden) && elseItems.length === 0,
         thenPromptIds: Array.isArray(row && row.thenPromptIds) ? row.thenPromptIds.map(String) : [],
         elsePromptIds: Array.isArray(row && row.elsePromptIds) ? row.elsePromptIds.map(String) : [],
@@ -4342,7 +4350,7 @@
         return `${modePicker}<span class="ifAiConditionWrap"><textarea data-if-field="aiCondition" data-id="${esc(row.id)}" placeholder="Example: Ask for the company name only if the caller says they are calling from a different company and did not already provide it.">${esc(row.aiCondition || '')}</textarea></span>`;
       }
       if(mode === 'time_range') {
-        return `${modePicker}<span class="ifConditionPill exprSide">time of day between</span><span class="ifConditionPill exprSide"><input type="time" data-if-field="timeStart" data-id="${esc(row.id)}" value="${esc(row.timeStart || '')}"></span><span class="ifConditionPill exprSide">and</span><span class="ifConditionPill exprSide"><input type="time" data-if-field="timeEnd" data-id="${esc(row.id)}" value="${esc(row.timeEnd || '')}"></span>`;
+        return `${modePicker}<span class="ifTimeText">time of day from</span><span class="ifConditionPill exprSide"><input type="time" data-if-field="timeStart" data-id="${esc(row.id)}" value="${esc(row.timeStart || '09:00')}"></span><span class="ifTimeText">to</span><span class="ifConditionPill exprSide"><input type="time" data-if-field="timeEnd" data-id="${esc(row.id)}" value="${esc(row.timeEnd || '16:00')}"></span>`;
       }
       const valueControl = ['is_empty','is_not_empty'].includes(row.operator) ? '' : `<span class="ifConditionPill exprSide"><input data-if-field="rightValue" data-id="${esc(row.id)}" value="${esc(row.rightValue)}" placeholder="value"></span>`;
       return `${modePicker}
@@ -4457,6 +4465,8 @@
       row[field] = ev.currentTarget.value;
       row.rightType = 'value';
       if(row.conditionMode === 'time_range') {
+        row.timeStart = row.timeStart || '09:00';
+        row.timeEnd = row.timeEnd || '16:00';
         row.left = 'current_time';
         row.operator = 'time_between';
         row.rightValue = `${row.timeStart || ''}|${row.timeEnd || ''}`;
