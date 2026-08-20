@@ -34,6 +34,8 @@ Each tenant repository should:
 2. Own its own Cloudflare Worker config, bindings, secrets, domains, Access policy, and deployment action.
 3. Keep prompts and integration configuration private.
 4. Invoke client-specific systems only through configured REST endpoints.
+5. Supply any tenant display aliases, such as speech-to-text name corrections,
+   through private deployment configuration.
 
 The prompt-graph runner intentionally delegates branch decisions and answer
 requirements to the tenant adapter. That keeps a tenant's Workers AI model,
@@ -41,6 +43,14 @@ call policy, and provider bindings private while the queue traversal behavior
 is shared and fully testable.
 
 Alias names such as `COMPANY_LOOKUP_TOKEN` may be stored as editable GitHub Actions variables in the private tenant repository. The value behind the alias must remain in the private adapter's own secret provider. The public engine receives neither the mapping nor the value.
+
+Display aliases follow the same boundary. A private adapter may inject a
+tenant-owned list such as `{ "from": "spoken spelling", "to": "display
+spelling" }` through an organization or repository Actions variable, then
+apply it to its own live display and final outputs. The engine deliberately
+does not contain, load, or publish the actual alias values. This lets each
+client correct its own recurring transcription variants without a fork or a
+public data leak.
 
 The public engine never deploys a Worker and never receives tenant credentials.
 
