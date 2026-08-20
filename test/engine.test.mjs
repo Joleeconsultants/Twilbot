@@ -144,7 +144,7 @@ test("runs the generic post-call sequence and skips disabled email", async () =>
     result: (state) => ({ ok: true, value: state.value }),
   });
   assert.deepEqual(result, { ok: true, value: 7 });
-  assert.deepEqual(steps, ["1. Start output delivery", "2. Load output settings", "3. Format output", "3a. Run REST output sorters", "4a. Skip email output", "5. Run REST output destinations", "6. Persist output result"]);
+  assert.deepEqual(steps, ["1. Start output delivery", "2. Load output settings", "3. Format output", "4. Run REST output sorters", "5a. Skip email output", "6. Run REST output destinations", "7. Persist output result"]);
   assert.equal(outputRetryDelaySeconds(0), 5);
   assert.equal(outputRetryDelaySeconds(2), 20);
   assert.equal(outputRetryDelaySeconds(10), 300);

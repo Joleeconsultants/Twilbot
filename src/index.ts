@@ -267,18 +267,35 @@ export interface PostCallOutputPipeline<State, Result> {
   result: (state: State) => Result;
 }
 
+/**
+ * Stable names for the generic post-call workflow. Private Worker adapters
+ * should use these names directly with Workflow.step.do so Cloudflare can
+ * render the actual output stages instead of a single helper-function node.
+ */
+export const POST_CALL_OUTPUT_WORKFLOW_STEPS = {
+  start: "1. Start output delivery",
+  duplicate: "1a. Return duplicate result",
+  loadSettings: "2. Load output settings",
+  formatOutput: "3. Format output",
+  runSorters: "4. Run REST output sorters",
+  sendEmail: "5. Send email output",
+  skipEmail: "5a. Skip email output",
+  runDestinations: "6. Run REST output destinations",
+  persist: "7. Persist output result",
+} as const;
+
 export async function runPostCallOutputPipeline<State, Result>(initial: State, pipeline: PostCallOutputPipeline<State, Result>): Promise<Result> {
-  let state = await pipeline.step("1. Start output delivery", () => pipeline.start(initial));
+  let state = await pipeline.step(POST_CALL_OUTPUT_WORKFLOW_STEPS.start, () => pipeline.start(initial));
   if (pipeline.isDuplicate(state)) return pipeline.duplicateResult(state);
 
-  state = await pipeline.step("2. Load output settings", () => pipeline.loadSettings(state));
-  state = await pipeline.step("3. Format output", () => pipeline.formatOutput(state));
-  state = await pipeline.step("3a. Run REST output sorters", () => pipeline.runSorters(state));
+  state = await pipeline.step(POST_CALL_OUTPUT_WORKFLOW_STEPS.loadSettings, () => pipeline.loadSettings(state));
+  state = await pipeline.step(POST_CALL_OUTPUT_WORKFLOW_STEPS.formatOutput, () => pipeline.formatOutput(state));
+  state = await pipeline.step(POST_CALL_OUTPUT_WORKFLOW_STEPS.runSorters, () => pipeline.runSorters(state));
   state = pipeline.shouldSendEmail(state)
-    ? await pipeline.step("4. Send email output", () => pipeline.sendEmail(state))
-    : await pipeline.step("4a. Skip email output", () => pipeline.skipEmail(state));
-  state = await pipeline.step("5. Run REST output destinations", () => pipeline.runDestinations(state));
-  state = await pipeline.step("6. Persist output result", () => pipeline.persist(state));
+    ? await pipeline.step(POST_CALL_OUTPUT_WORKFLOW_STEPS.sendEmail, () => pipeline.sendEmail(state))
+    : await pipeline.step(POST_CALL_OUTPUT_WORKFLOW_STEPS.skipEmail, () => pipeline.skipEmail(state));
+  state = await pipeline.step(POST_CALL_OUTPUT_WORKFLOW_STEPS.runDestinations, () => pipeline.runDestinations(state));
+  state = await pipeline.step(POST_CALL_OUTPUT_WORKFLOW_STEPS.persist, () => pipeline.persist(state));
   return pipeline.result(state);
 }
 

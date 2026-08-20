@@ -951,7 +951,6 @@
         { key:'caller_id', label:'Caller ID', placeholder:'{{caller_id}}', value:'', source:'manual' },
         { key:'caller_id_country_code', label:'Caller ID country code', placeholder:'', value:'+1', source:'manual', uiOnly:true },
         { key:'emails', label:'Emails', placeholder:'', value:'', source:'manual' },
-        { key:'current_time', label:'Time Range', placeholder:'', value:'', source:'system', uiOnly:true, system:true },
       ];
     }
 
@@ -963,6 +962,7 @@
         let key = String((row||{}).key || '').trim();
         if(key === 'email') key = 'emails';
         key = key.toLowerCase().replace(/[^a-z0-9_.-]+/g, '_').replace(/^_+|_+$/g, '');
+        if(key === 'current_time') return;
         if(!key) return;
         if(!byKey[key]) {
           custom.push(normalizeCustomPromptVariable({ ...row, key }));
@@ -1495,12 +1495,6 @@
               </label>`;
     }
 
-    function renderSystemVariableControl(row) {
-      const key = String((row || {}).key || '').trim();
-      const label = String((row || {}).label || key || 'System variable').trim();
-      return `<div class="variableRow variableSystemRow"><span class="variableLabel">${esc(label)}</span><span class="variableSystemValue">Available for Time range If blocks</span></div>`;
-    }
-
     function renderVariables() {
       const rows = normalizePromptVariables(promptVariables);
       promptVariables = rows;
@@ -1559,7 +1553,6 @@
             </label>`;
     }
               if(String(row.key || '') === 'emails') return renderEmailRecipientControl(row);
-              if(row.system) return renderSystemVariableControl(row);
               if(isRestVariable(row)) return renderRestVariableControl(row);
               return `
               <label class="variableRow">
@@ -4350,7 +4343,7 @@
         return `${modePicker}<span class="ifAiConditionWrap"><textarea data-if-field="aiCondition" data-id="${esc(row.id)}" placeholder="Example: Ask for the company name only if the caller says they are calling from a different company and did not already provide it.">${esc(row.aiCondition || '')}</textarea></span>`;
       }
       if(mode === 'time_range') {
-        return `${modePicker}<span class="ifTimeText">time of day from</span><span class="ifConditionPill exprSide"><input type="time" data-if-field="timeStart" data-id="${esc(row.id)}" value="${esc(row.timeStart || '09:00')}"></span><span class="ifTimeText">to</span><span class="ifConditionPill exprSide"><input type="time" data-if-field="timeEnd" data-id="${esc(row.id)}" value="${esc(row.timeEnd || '16:00')}"></span>`;
+        return `${modePicker}<span class="ifTimeText">between</span><span class="ifConditionPill exprSide"><input type="time" data-if-field="timeStart" data-id="${esc(row.id)}" value="${esc(row.timeStart || '09:00')}"></span><span class="ifTimeText">and</span><span class="ifConditionPill exprSide"><input type="time" data-if-field="timeEnd" data-id="${esc(row.id)}" value="${esc(row.timeEnd || '16:00')}"></span>`;
       }
       const valueControl = ['is_empty','is_not_empty'].includes(row.operator) ? '' : `<span class="ifConditionPill exprSide"><input data-if-field="rightValue" data-id="${esc(row.id)}" value="${esc(row.rightValue)}" placeholder="value"></span>`;
       return `${modePicker}
