@@ -53,6 +53,24 @@ test("validates portable configurations for two independent tenants", async () =
   assert.equal(request.url, "https://api.second-tenant.example/lookup?caller_id=%2B15550100200");
 });
 
+test("shapes generic REST sorter and destination payloads", async () => {
+  const secondTenant = JSON.parse(await readFile(new URL("../examples/tenant-config.second-tenant.example.json", import.meta.url), "utf8"));
+  const parsed = validateTenantConfig(secondTenant);
+  assert.equal(parsed.ok, true);
+  const sorter = parsed.config.restTools.find((tool) => tool.scope === "output_sorter");
+  const destination = parsed.config.restTools.find((tool) => tool.scope === "output_destination");
+  const output = buildOutputPayload({ company_name: "Example Co", issue_summary: "Needs help." });
+  const sorterRequest = buildRestRequest(sorter, { output: output.output.text });
+  const destinationRequest = buildRestRequest(destination, { output: output.output.text });
+  assert.equal(sorterRequest.method, "POST");
+  assert.equal(sorterRequest.url, "https://api.second-tenant.example/output/sort");
+  assert.deepEqual(sorterRequest.body, { output: "Company Name: Example Co\n\nSummary: Needs help." });
+  assert.equal(destinationRequest.method, "POST");
+  assert.equal(destinationRequest.url, "https://api.second-tenant.example/output/destination");
+  assert.deepEqual(destinationRequest.body, { output: "Company Name: Example Co\n\nSummary: Needs help." });
+  assert.deepEqual(Object.keys(destinationRequest.body), ["output"]);
+});
+
 test("rejects token values and invalid portable tenant configuration", () => {
   const invalid = validateTenantConfig({
     version: 1,
