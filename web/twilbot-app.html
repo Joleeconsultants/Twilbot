@@ -313,8 +313,9 @@
     .apiUnifiedParamRow .variableMiniBtn{min-width:0;flex:initial}
     @media(max-width:900px){.apiUnifiedParamRow{grid-template-columns:repeat(2,minmax(0,1fr))}.apiUnifiedParamRow .variableMiniBtn{grid-column:span 2}}
     @media(max-width:560px){.apiUnifiedParamRow{grid-template-columns:1fr}.apiUnifiedParamRow .variableMiniBtn{grid-column:auto}}
-    @media(min-width:1061px){.statusRow{min-width:max-content}.topToggles{flex-wrap:nowrap}}
-    @media(min-width:681px) and (max-width:1060px){.topbar{grid-template-columns:minmax(0,1fr) auto;align-items:center}.topbarMain{grid-column:1 / -1}.statusRow{grid-column:1 / -1;justify-content:center;min-width:0}.topbarViewActions{grid-column:2;grid-row:3;justify-content:flex-end}.topToggles{justify-content:center;flex-wrap:nowrap}.topToggle{flex:0 0 auto}}
+    /* Desktop headers keep related controls together; smaller screens use the existing stacked layout. */
+    @media(min-width:901px) and (max-width:1200px){.topbar{grid-template-columns:max-content minmax(260px,1fr) max-content;align-items:center}.topbarMain{grid-column:1 / -1;grid-row:1}.statusRow{grid-column:1;grid-row:2;min-width:max-content;justify-content:flex-start}.topToggles{justify-content:flex-start;flex-wrap:nowrap}.topToggle{flex:0 0 auto}.topbarViewActions{grid-column:3;grid-row:2;justify-content:flex-end;flex-wrap:nowrap}}
+    @media(min-width:1201px){.statusRow{min-width:max-content}.topToggles{flex-wrap:nowrap}}
   </style>
 </head>
 <body class="booting">
