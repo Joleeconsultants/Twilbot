@@ -114,6 +114,26 @@ test("advances a prompt graph through a branch until an answer is required", asy
   assert.deepEqual(result.queue, ["finish"]);
 });
 
+test("ends cleanly at an intentionally empty prompt slot", async () => {
+  const result = await advancePromptFlow({
+    queue: ["opening", "empty-slot", "later"],
+    prompts: [
+      { id: "opening", text: "Opening", mode: "statement" },
+      { id: "empty-slot", text: "", mode: "statement" },
+      { id: "later", text: "This must not be spoken", mode: "query" },
+    ],
+    conditions: [],
+    values,
+    decideCondition: () => false,
+    shouldWaitForAnswer: (prompt) => prompt.mode === "query",
+  });
+  assert.deepEqual(result.spokenPromptIds, ["opening"]);
+  assert.equal(result.text, "Opening");
+  assert.equal(result.waitingForAnswer, false);
+  assert.equal(result.completed, true);
+  assert.deepEqual(result.queue, []);
+});
+
 test("formats an escaped plain-text output email", () => {
   const email = formatOutputEmail({ company_name: "Example <Co>", issue_summary: "Needs help." }, "Phone call");
   assert.equal(email.text, "Company Name: Example <Co>\n\nSummary: Needs help.");

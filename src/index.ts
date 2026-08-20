@@ -383,7 +383,10 @@ export async function advancePromptFlow(options: AdvancePromptFlowOptions): Prom
       continue;
     }
     const prompt = promptById.get(nextId);
-    if (!prompt || !clean(prompt.text)) continue;
+    if (!prompt) continue;
+    // An empty prompt is an intentional terminal slot. It lets an app keep a
+    // stable prompt layout without having to delete or rewire later steps.
+    if (!clean(prompt.text)) return { queue: [], spokenPromptIds, text: parts.join("\n\n"), waitingForAnswer: false, completed: true };
     parts.push(renderTemplate(prompt.text, options.values));
     spokenPromptIds.push(prompt.id);
     if (options.shouldWaitForAnswer(prompt)) {

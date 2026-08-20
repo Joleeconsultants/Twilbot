@@ -149,6 +149,7 @@
     .mobileDragLabel{display:none}
     .dragBars{font-size:12px;letter-spacing:.06em;opacity:.8}
     .promptBody{display:grid;gap:8px}.promptTop{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap}.promptName{font-size:15px;font-weight:700}.promptTag{position:absolute;top:10px;right:10px;z-index:2;max-width:132px;text-align:right;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;pointer-events:none}
+    .promptModeToggle{display:inline-grid;grid-template-columns:1fr 1fr;border:1px solid rgba(96,165,250,.24);border-radius:10px;overflow:hidden;background:rgba(15,23,42,.75)}.promptModeButton{min-width:78px;border:0;background:transparent;color:var(--muted);font:inherit;font-size:11px;font-weight:800;padding:6px 8px;cursor:pointer}.promptModeButton + .promptModeButton{border-left:1px solid rgba(96,165,250,.18)}.promptModeButton.selected{background:rgba(37,99,235,.25);color:#dbeafe}.promptModeButton[disabled]{opacity:.45;cursor:not-allowed}
     .promptInput,.promptTextarea{width:100%;border-radius:12px;border:1px solid rgba(148,163,184,.12);background:rgba(17,24,39,.8);padding:9px 10px;font-size:14px;color:var(--text);font:inherit}
     .promptTextarea{min-height:74px;resize:none;overflow:hidden;line-height:1.4}
     .promptPreview{margin-top:8px;padding:9px 11px;border-radius:12px;border:1px solid rgba(96,165,250,.22);background:rgba(37,99,235,.10);font-size:13px;line-height:1.45;color:var(--muted);white-space:pre-wrap;word-break:break-word}
@@ -481,7 +482,6 @@
     let voiceAutoRegenerateKey = '';
     let flowOrderState = [];
     let promptVariables = [];
-    let prompt1GreetingMode = true;
     let pendingEmailEntryValue = '';
     let variablePanelOpen = false;
     let draftBusy = false;
@@ -544,6 +544,19 @@
     let selectedLogSid = '';
     let callLogsBusy = false;
     let callLogsTimer = null;
+    const callLogsCacheStorageKey = 'twilbot:call-logs:v1';
+    function restoreCallLogsCache() {
+      try {
+        const cached = JSON.parse(sessionStorage.getItem(callLogsCacheStorageKey) || 'null');
+        if(!cached || !Array.isArray(cached.logs)) return false;
+        callLogs = cached.logs.slice(0, 50);
+        selectedLogSid = String(cached.selectedLogSid || '');
+        return callLogs.length > 0;
+      } catch(_err) { return false; }
+    }
+    function saveCallLogsCache() {
+      try { sessionStorage.setItem(callLogsCacheStorageKey, JSON.stringify({logs: callLogs, selectedLogSid, savedAt: Date.now()})); } catch(_err) {}
+    }
     function fmtDate(value) {
       if(!value) return '';
       const date = new Date(value);
@@ -691,6 +704,7 @@
       callSid = String(callSid || '');
       if(!callSid) return;
       selectedLogSid = callSid;
+      saveCallLogsCache();
       renderCallLogList();
       if(!options.silent) renderCallLogDetail({loading:true});
       try {
@@ -725,6 +739,7 @@
         const existingStillPresent = selectedLogSid && callLogs.some(row => String(row.call_sid || '') === selectedLogSid);
         if(!existingStillPresent) selectedLogSid = '';
         if((selectFirst || refreshDetail) && !selectedLogSid && callLogs.length) selectedLogSid = String(callLogs[0].call_sid || '');
+        saveCallLogsCache();
         renderCallLogList();
         if((selectFirst || refreshDetail) && selectedLogSid) await loadCallLogDetail(selectedLogSid, {silent: !!options.silent});
         else if(!selectedLogSid) renderCallLogDetail(null);
@@ -742,7 +757,10 @@
       const silent = !!options.silent;
       const btn = document.getElementById('callLogRefreshBtn');
       if(btn) btn.addEventListener('click', () => loadCallLogs(false, true));
-      renderCallLogDetail(null);
+      const restored = restoreCallLogsCache();
+      renderCallLogList();
+      if(restored && selectedLogSid) renderCallLogDetail({loading:true});
+      else renderCallLogDetail(null);
       if(callLogsTimer) clearInterval(callLogsTimer);
       callLogsTimer = setInterval(() => {
         if(document.hidden || callLogsBusy) return;
@@ -750,7 +768,7 @@
       }, 45000);
       // Populate logs while the phone screen loads so switching tabs never
       // waits on its initial network request.
-      loadCallLogs(true, true, {silent});
+      loadCallLogs(!restored, true, {silent:true});
     }
     function saveUiSnapshot() {
       try {
@@ -807,7 +825,7 @@
         mode: p.mode || '',
         status: p.status || 'draft',
         generated: (p.generated && typeof p.generated === 'object') ? p.generated : (p.mp3_filename ? p : {})
-      })).filter(p => String(p.text || '').trim() || ((p.generated || {}).mp3_filename || (p.generated || {}).raw_filename));
+      }));
     }
 
     function saveDraftPromptCache() {
@@ -3185,30 +3203,6 @@
       }).join('');
     }
 
-    function currentPromptAnchorIso(summary) {
-      const promptKey = String((summary && summary.current_prompt_key) || '').trim();
-      if(promptKey === 'prompt-1' || promptKey === 'intro') {
-        const fetch = (summary && summary.prompt_1_audio_fetch) || {};
-        return String((summary && (summary.prompt_1_audio_request_received_at || fetch.request_started_at || summary.current_prompt_audio_started_at || summary.current_prompt_started_at)) || '').trim();
-      }
-      return String((summary && summary.current_prompt_started_at) || '').trim();
-    }
-
-    function prompt1EstimatedDoneMs(summary, prompt) {
-      const fetch = (summary && summary.prompt_1_audio_fetch) || {};
-      const estimatedIso = String((summary && summary.prompt_1_estimated_done_at) || fetch.estimated_done_at || '').trim();
-      if(estimatedIso) {
-        const direct = parseMs(estimatedIso);
-        if(direct > 0) return direct;
-      }
-      const anchorIso = currentPromptAnchorIso(summary);
-      const anchorMs = parseMs(anchorIso);
-      if(anchorMs <= 0) return 0;
-      const durationMs = Number((summary && summary.prompt_1_audio_duration_ms) || fetch.audio_duration_ms || (prompt && prompt.audio_duration_ms) || 0);
-      const bufferMs = Number((summary && summary.prompt_1_playback_buffer_ms) || fetch.playback_buffer_ms || 1600);
-      return anchorMs + Math.max(0, durationMs) + Math.max(0, bufferMs);
-    }
-
     function buildAiPromptStaticHtml(prompt) {
       if(!prompt) return '';
       const timings = aiPromptTimings(prompt);
@@ -3253,48 +3247,6 @@
       return Array.isArray((summary||{}).output_conversation_rows)
         ? summary.output_conversation_rows.filter(row => row && row.text)
         : [];
-    }
-
-    function completedRowsWithGoodbye(summary, rows) {
-      const baseRows = Array.isArray(rows) ? rows.slice() : [];
-      if(!summary || !summary.closed_at || !baseRows.length) return baseRows;
-      const hasGoodbye = baseRows.some(row => promptLooksLikeGoodbye({ text: row.text }));
-      if(hasGoodbye) return baseRows;
-      const schedule = Array.isArray(summary.prompt_schedule) ? summary.prompt_schedule : [];
-      let goodbyeText = '';
-      for(let i = schedule.length - 1; i >= 0; i--) {
-        const item = schedule[i] || {};
-        const text = String(item.prompt_text || item.text || '').trim();
-        if(promptLooksLikeGoodbye({ text })) {
-          goodbyeText = text;
-          break;
-        }
-      }
-      if(!goodbyeText) {
-        for(let i = draftPrompts.length - 1; i >= 0; i--) {
-          const row = draftPrompts[i] || {};
-          const text = String(row.text || row.generated?.resolved_text || row.generated?.text || '').trim();
-          if(promptLooksLikeGoodbye({ text })) {
-            goodbyeText = text;
-            break;
-          }
-        }
-      }
-      if(!goodbyeText) return baseRows;
-      const labelPromptNumbers = baseRows.map(row => {
-        const labelMatch = String(row.label || '').match(/\bPrompt\s+(\d+)/i);
-        return labelMatch ? Number(labelMatch[1] || 0) : 0;
-      }).filter(Boolean);
-      const maxPromptNumber = labelPromptNumbers.length
-        ? Math.max(...labelPromptNumbers)
-        : baseRows.reduce((max, row) => Math.max(max, Number(row.prompt_index || 0)), 0);
-      baseRows.push({
-        kind: 'prompt',
-        label: `Prompt ${maxPromptNumber + 1}`,
-        prompt_index: maxPromptNumber + 1,
-        text: goodbyeText
-      });
-      return baseRows;
     }
 
     function buildOutputConversationRowsHtml(rows) {
@@ -3342,7 +3294,7 @@
       const delivery = (deliveryEnvelope.result && typeof deliveryEnvelope.result === 'object') ? deliveryEnvelope.result : deliveryEnvelope;
       const postprocess = (summary && typeof summary.postprocess === 'object') ? summary.postprocess : {};
       const companyMatch = (summary && typeof summary.company_vector_match === 'object') ? summary.company_vector_match : {};
-      const rows = completedRowsWithGoodbye(summary, outputConversationRows(summary));
+      const rows = outputConversationRows(summary);
       const transcript = cleanTranscriptText(summary.output_conversation_transcript || payload.conversation_transcript || payload.transcript || summary.conversation_transcript || '');
       const blocks = [];
       const title = payload.summary || postprocess?.ai?.output_text || '';
@@ -3472,12 +3424,6 @@
       const aiPrompt = prompts[promptKey] || null;
       const aiStartedAt = parseMs(currentPromptAnchorIso(summary));
       const schedule = Array.isArray(summary.prompt_schedule) ? summary.prompt_schedule.slice() : [];
-      if(!schedule.some(item => Number((item||{}).prompt_index || 0) === 1)) {
-        const greetingPrompt = prompts['prompt-1'] || null;
-        if(greetingPrompt) {
-          schedule.unshift({ prompt_index: 1, prompt_key: 'prompt-1', prompt_text: greetingPrompt.text || '', mode: 'greeting' });
-        }
-      }
       const answers = Array.isArray(summary.question_answers) ? summary.question_answers : [];
       const currentPromptIndex = Number(summary.current_prompt_index || 0);
       const currentQuestionNumber = Number(summary.current_question_number || 0);
@@ -3499,7 +3445,7 @@
         const draftPromptObj = prompts[String(item.prompt_key || '')] || {};
         const runtimePromptText = String(item.prompt_text || item.text || '').trim();
         const promptObj = { ...draftPromptObj, ...item, text: runtimePromptText || draftPromptObj.text || '' };
-        const isQuestion = String(item.mode || '') === 'question';
+        const isQuestion = ['question', 'query'].includes(String(item.mode || '').toLowerCase());
         const responseQuestionNumber = isQuestion ? (++questionOrdinal) : 0;
         const callbackPrompt = isQuestion && isCallbackPromptText((item.prompt_text || (promptObj && promptObj.text) || ''));
         const finalizedTextForPrompt = isQuestion ? (finalizedAnswerByPrompt.get(promptIndex) || '') : '';
@@ -3512,42 +3458,23 @@
 
         let promptHtml = buildAiPromptStaticHtml(promptObj);
         if(summary.ai_talking && currentPromptIndex === promptIndex && aiPrompt && String(item.prompt_key || '') === promptKey) {
-          if(promptIndex >= 2) {
-            const activePromptKey = String(item.prompt_key || '');
-            if(promptFlowState.callSid !== callSid) {
-              promptFlowState.callSid = callSid;
-              promptFlowState.promptIndex = 0;
-              promptFlowState.promptKey = '';
-              promptFlowState.startedAtMs = 0;
-            }
-            if(promptFlowState.promptIndex !== promptIndex || promptFlowState.promptKey !== activePromptKey) {
-              promptFlowState.promptIndex = promptIndex;
-              promptFlowState.promptKey = activePromptKey;
-              promptFlowState.startedAtMs = nowMs();
-            }
-            const elapsed = Math.max(0, nowMs() - Number(promptFlowState.startedAtMs || nowMs()));
-            const timings = aiPromptTimings(aiPrompt);
-            const last = timings.length ? (timings[timings.length - 1] || {}) : {};
-            const localDone = timings.length ? (elapsed >= Number(last.end_ms || 0)) : false;
-            promptHtml = localDone ? buildAiPromptStaticHtml(aiPrompt) : buildAiPromptElapsedHtml(aiPrompt, elapsed);
-          } else {
-            const activePromptKey = String(item.prompt_key || '');
-            if(promptFlowState.callSid !== callSid) {
-              promptFlowState.callSid = callSid;
-              promptFlowState.promptIndex = 0;
-              promptFlowState.promptKey = '';
-              promptFlowState.startedAtMs = 0;
-            }
-            if(promptFlowState.promptIndex !== promptIndex || promptFlowState.promptKey !== activePromptKey) {
-              promptFlowState.promptIndex = promptIndex;
-              promptFlowState.promptKey = activePromptKey;
-              promptFlowState.startedAtMs = nowMs();
-            }
-            const elapsed = Math.max(0, nowMs() - Number(promptFlowState.startedAtMs || nowMs()));
-            const estimatedDoneMs = prompt1EstimatedDoneMs(summary, aiPrompt);
-            const localDone = estimatedDoneMs > 0 ? (nowMs() >= estimatedDoneMs) : false;
-            promptHtml = localDone ? buildAiPromptStaticHtml(aiPrompt) : buildAiPromptElapsedHtml(aiPrompt, elapsed);
+          const activePromptKey = String(item.prompt_key || '');
+          if(promptFlowState.callSid !== callSid) {
+            promptFlowState.callSid = callSid;
+            promptFlowState.promptIndex = 0;
+            promptFlowState.promptKey = '';
+            promptFlowState.startedAtMs = 0;
           }
+          if(promptFlowState.promptIndex !== promptIndex || promptFlowState.promptKey !== activePromptKey) {
+            promptFlowState.promptIndex = promptIndex;
+            promptFlowState.promptKey = activePromptKey;
+            promptFlowState.startedAtMs = nowMs();
+          }
+          const elapsed = Math.max(0, nowMs() - Number(promptFlowState.startedAtMs || nowMs()));
+          const timings = aiPromptTimings(aiPrompt);
+          const last = timings.length ? (timings[timings.length - 1] || {}) : {};
+          const localDone = timings.length ? (elapsed >= Number(last.end_ms || 0)) : false;
+          promptHtml = localDone ? buildAiPromptStaticHtml(aiPrompt) : buildAiPromptElapsedHtml(aiPrompt, elapsed);
         }
         blocks.push(`<div class="flowBlock"><span class="flowLabel">Prompt ${promptIndex}</span><span class="flowSeg ai">${promptHtml}</span></div>`);
 
@@ -3582,16 +3509,8 @@
       });
 
       if(!blocks.length) {
-        const greetingPrompt = prompts['prompt-1'] || prompts['intro'] || null;
-        const showingGreetingNow = !!(summary.ai_talking && (promptKey === 'prompt-1' || promptKey === 'intro') && currentPromptAnchorIso(summary) && (!prompt1EstimatedDoneMs(summary, greetingPrompt) || nowMs() < prompt1EstimatedDoneMs(summary, greetingPrompt)));
-        if(showingGreetingNow && greetingPrompt) {
-          const greetingHtml = buildAiPromptHtml(greetingPrompt, currentPromptAnchorIso(summary));
-          retainedStreamHtml = `<div class="flowText"><div class="flowBlock"><span class="flowLabel">Prompt 1</span><span class="flowSeg ai">${greetingHtml}</span></div></div>`;
-          renderStreamMarkup(retainedStreamHtml, { stickToBottom: true });
-        } else {
-          retainedStreamHtml = '<div class="flowText"></div>';
-          renderStreamMarkup(retainedStreamHtml, { stickToBottom: true });
-        }
+        retainedStreamHtml = '<div class="flowText"></div>';
+        renderStreamMarkup(retainedStreamHtml, { stickToBottom: true });
         return;
       }
       retainedStreamHtml = `<div class="flowText">${blocks.join('')}</div>`;
@@ -3660,18 +3579,10 @@
       return visualPromptIds().indexOf(String(id));
     }
 
-    function promptLooksLikeGoodbye(prompt) {
-      const generated = (prompt && prompt.generated) || {};
-      const text = String((prompt && prompt.text) || generated.resolved_text || generated.text || '').toLowerCase();
-      return text.includes('goodbye') || text.includes('get back to you shortly');
-    }
-
-    function actualGoodbyePromptId() {
-      for(let i = draftPrompts.length - 1; i >= 0; i--) {
-        const row = draftPrompts[i] || {};
-        if(promptLooksLikeGoodbye(row)) return String(row.id || '');
-      }
-      return '';
+    function promptModeFor(prompt, isFinal) {
+      if(isFinal) return 'statement';
+      const mode = String((prompt || {}).mode || '').toLowerCase();
+      return (mode === 'query' || mode === 'question') ? 'query' : 'statement';
     }
 
     function draftPromptRow(prompt, idx) {
@@ -3681,20 +3592,18 @@
       const visualIdxRaw = visualPromptIndexById(prompt.id);
       const displayIdx = visualIdxRaw >= 0 ? visualIdxRaw : idx;
       const promptNumber = displayIdx + 1;
-      const goodbyePromptId = actualGoodbyePromptId();
-      const isGoodbye = !!goodbyePromptId && String(prompt.id || '') === goodbyePromptId;
       const generateLabel = dirty ? 'Make' : 'Remake';
-      const upDisabled = displayIdx === 0 ? 'disabled' : '';
-      const downDisabled = isGoodbye ? 'disabled' : '';
       const playDisabled = !String(prompt.text || '').trim() ? 'disabled' : '';
       const visualIds = visualPromptIds();
       const visualPosition = visualIds.indexOf(String(prompt.id || ''));
-      const moveUpDisabled = visualPosition <= 1;
-      const moveDownDisabled = isGoodbye || visualPosition < 0 || visualPosition >= visualIds.length - 1;
+      const isFinal = visualPosition >= 0 && visualPosition === visualIds.length - 1;
+      const mode = promptModeFor(prompt, isFinal);
+      const moveUpDisabled = visualPosition <= 0;
+      const moveDownDisabled = visualPosition < 0 || isFinal;
       const moveControl = `<div class="promptMoveButtons"><button type="button" class="btnMove" data-prompt-move-dir="up" data-id="${esc(prompt.id)}" ${moveUpDisabled ? 'disabled' : ''}>↑ Move Up</button><button type="button" class="btnMove" data-prompt-move-dir="down" data-id="${esc(prompt.id)}" ${moveDownDisabled ? 'disabled' : ''}>↓ Move Down</button></div>`;
       const sideMoveControl = `<div class="sideMoveButtons"><button type="button" class="btnSideMove up" data-prompt-move-dir="up" data-id="${esc(prompt.id)}" ${moveUpDisabled ? 'disabled' : ''}>↑</button><div class="dragLabel"><div>${promptNumber}</div><div class="dragBars">⋮⋮</div></div><button type="button" class="btnSideMove down" data-prompt-move-dir="down" data-id="${esc(prompt.id)}" ${moveDownDisabled ? 'disabled' : ''}>↓</button></div>`;
       const promptTag = variableized ? 'Dynamic Prompt' : '';
-      const promptName = isGoodbye ? `Prompt ${promptNumber} (Goodbye)` : (prompt1GreetingMode && String(prompt.id || '') === 'prompt-1' ? `Prompt ${promptNumber} (Greeting)` : `Prompt ${promptNumber}`);
+      const promptName = `Prompt ${promptNumber}`;
       return `
         <div class="promptRow" data-flow-id="prompt:${esc(prompt.id)}" data-prompt-id="${esc(prompt.id)}">
           <div class="drag">${sideMoveControl}<div class="dragLabel mobileDragLabel"><div>${promptNumber}</div><div class="dragBars">⋮⋮</div></div></div>
@@ -3702,6 +3611,7 @@
           <div class="promptBody">
             <div class="promptTop">
               <div class="promptName">${promptName}</div>
+              <div class="promptModeToggle" role="group" aria-label="${promptName} type"><button type="button" class="promptModeButton ${mode === 'statement' ? 'selected' : ''}" data-action="set-mode" data-mode="statement" data-id="${esc(prompt.id)}">Statement</button><button type="button" class="promptModeButton ${mode === 'query' ? 'selected' : ''}" data-action="set-mode" data-mode="query" data-id="${esc(prompt.id)}" ${isFinal ? 'disabled title="The final prompt is always a statement."' : ''}>Query</button></div>
             </div>
             <textarea class="promptTextarea" data-field="text" data-id="${esc(prompt.id)}" placeholder="What should this prompt say? Press Return to generate just this prompt.">${esc(prompt.text || '')}</textarea>
             <div class="promptPreview ${renderPromptTextPreview(prompt.text || '') ? '' : 'empty'}" data-preview-id="${esc(prompt.id)}">${renderPromptTextPreview(prompt.text || '')}</div>
@@ -3710,7 +3620,7 @@
             ${moveControl}
             <button type="button" class="btnAction primary" data-action="generate" data-role="generate" data-id="${esc(prompt.id)}" tabindex="0">${generateLabel}</button>
             <button type="button" class="btnPlay" data-action="play" data-dirty="${dirty ? '1' : '0'}" data-id="${esc(prompt.id)}" ${dirty || !generated.mp3_filename ? 'disabled' : ''}>▶ Play</button>
-            <button type="button" class="btnAction warn" data-action="delete" data-id="${esc(prompt.id)}" ${draftPrompts.length <= 2 ? 'disabled' : ''}>Delete</button>
+            <button type="button" class="btnAction warn" data-action="delete" data-id="${esc(prompt.id)}">Clear</button>
           </div>
         </div>`;
     }
@@ -3721,7 +3631,7 @@
         title: '',
         text: String(p.text || '').trim(),
         notes: String(p.notes || '').trim(),
-        mode: String(p.mode || '').trim(),
+        mode: promptModeFor(p, idx === draftPrompts.length - 1),
         status: p.generated && p.generated.mp3_filename ? 'generated' : 'draft',
         generated: p.generated || {}
       }));
@@ -3836,13 +3746,12 @@
           promptVariables = vars;
           saveLocalPromptVariables(promptVariables);
         }
-        const res = await fetch(promptDraftsUrl, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({prompts: serializeDraftPrompts(), variables: vars, prompt_1_greeting_mode: prompt1GreetingMode, auto_update_prompts: autoUpdatePrompts, if_statements: serializeServerIfStatements(), flow_order: serializeServerFlowOrder()}) });
+        const res = await fetch(promptDraftsUrl, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({prompts: serializeDraftPrompts(), variables: vars, auto_update_prompts: autoUpdatePrompts, if_statements: serializeServerIfStatements(), flow_order: serializeServerFlowOrder()}) });
         const data = await res.json();
         if(!data.ok) throw new Error(data.error || 'save failed');
         promptVariables = normalizePromptVariables(vars);
         saveLocalPromptVariables(promptVariables);
         const draftsPayload = ((data||{}).drafts)||{};
-        prompt1GreetingMode = draftsPayload.prompt_1_greeting_mode !== false;
         applyServerFlowState(draftsPayload);
         currentPhoneVoiceId = String(((draftsPayload.voice || {}) || {}).voice_id || currentPhoneVoiceId || '').trim();
         const prompts = ((draftsPayload.prompts) || []).map((p, idx) => ({
@@ -4087,8 +3996,7 @@
       const visualIdxRaw = visualPromptIndexById(id);
       const displayIdx = visualIdxRaw >= 0 ? visualIdxRaw : idx;
       const promptNumber = displayIdx + 1;
-      const goodbyePromptId = actualGoodbyePromptId();
-      return String(id) === goodbyePromptId ? `Prompt ${promptNumber} (Goodbye)` : `Prompt ${promptNumber}`;
+      return `Prompt ${promptNumber}`;
     }
 
     function promptMoveOptionLabel(id) {
@@ -4446,10 +4354,21 @@
     }
 
     function addIfStatement() {
-      const newIf = normalizeIfStatement({ id:`if-${Date.now()}-${Math.random().toString(36).slice(2,7)}`, elseHidden:true });
+      const newIf = normalizeIfStatement({
+        id:`if-${Date.now()}-${Math.random().toString(36).slice(2,7)}`,
+        conditionMode:'time_range',
+        timeStart:'09:00',
+        timeEnd:'16:00',
+        left:'current_time',
+        operator:'time_between',
+        elseHidden:true
+      });
       ifStatements.push(newIf);
       saveIfStatements();
-      saveFlowOrder([...normalizedFlowOrder(), `if:${newIf.id}`]);
+      const flow = normalizedFlowOrder();
+      const finalPromptIndex = Math.max(...flow.map((id, index) => id.startsWith('prompt:') ? index : -1));
+      flow.splice(finalPromptIndex >= 0 ? finalPromptIndex : flow.length, 0, `if:${newIf.id}`);
+      saveFlowOrder(flow);
       queueDraftSave(true);
       renderPrompts();
       const rows = document.querySelectorAll('.ifStatementRow');
@@ -4936,7 +4855,7 @@ ${conditionText}`);
     }
 
     function addDraftPrompt() {
-      const newPrompt = { id:`draft-${Date.now()}-${Math.random().toString(36).slice(2,7)}`, title:'', text:'', notes:'', generated:{} };
+      const newPrompt = { id:`draft-${Date.now()}-${Math.random().toString(36).slice(2,7)}`, title:'', text:'', notes:'', mode:'statement', generated:{} };
       draftPrompts.push(newPrompt);
       saveFlowOrder([...normalizedFlowOrder(), `prompt:${newPrompt.id}`]);
       renderPrompts();
@@ -5070,21 +4989,21 @@ ${conditionText}`);
         return generateOneDraftPrompt(id, false);
       }
       if(action === 'delete') {
-        if(draftPrompts.length <= 2) {
-          setPromptNotice('Minimum 2 prompts required.');
-          return;
-        }
         const row = draftPrompts[idx] || {};
         const generated = row.generated || {};
         const hasRealContent = !!String(row.text || '').trim() || !!String(generated.mp3_filename || generated.raw_filename || generated.text || generated.resolved_text || '').trim();
         if(hasRealContent) {
           const label = promptMoveOptionLabel(id);
-          const ok = confirm(`Delete ${label}?`);
+          const ok = confirm(`Clear ${label}? The empty prompt will end the call when reached.`);
           if(!ok) return;
         }
-        removeFlowItemFromAllIfBranches(`prompt:${id}`);
-        saveFlowOrder(normalizedFlowOrder().filter(flowId => flowId !== `prompt:${id}`));
-        draftPrompts.splice(idx, 1);
+        draftPrompts[idx] = { ...row, title:'', text:'', notes:'', mode:'statement', status:'draft', generated:{} };
+      }
+      if(action === 'set-mode') {
+        const row = draftPrompts[idx] || {};
+        const finalId = visualPromptIds().slice(-1)[0] || '';
+        const requested = String(ev.currentTarget.getAttribute('data-mode') || 'statement');
+        draftPrompts[idx] = { ...row, mode: String(row.id) === String(finalId) ? 'statement' : (requested === 'query' ? 'query' : 'statement') };
       }
       renderPrompts();
       queueDraftSave(true);
@@ -5099,7 +5018,7 @@ ${conditionText}`);
       const fromSlot = { ...moving };
       const toSlot = { ...target };
       // Swap content while preserving each slot ID. This keeps flow-order anchors stable,
-      // so the greeting slot does not jump to an unexpected top-level location.
+      // so the stable final prompt slot does not jump to an unexpected top-level location.
       draftPrompts[fromIdx] = { ...toSlot, id: fromSlot.id };
       draftPrompts[toIdx] = { ...fromSlot, id: toSlot.id };
       renderPrompts();
@@ -5628,7 +5547,6 @@ ${conditionText}`);
         const data = await res.json();
         if(!data.ok) throw new Error(data.error || 'drafts failed');
         const draftsPayload = ((data||{}).drafts) || {};
-        prompt1GreetingMode = draftsPayload.prompt_1_greeting_mode !== false;
         applyServerFlowState(draftsPayload);
         autoUpdatePrompts = !!draftsPayload.auto_update_prompts;
         currentPhoneVoiceId = String(((draftsPayload.voice || {}) || {}).voice_id || '').trim();
@@ -5642,7 +5560,7 @@ ${conditionText}`);
           mode: p.mode || '',
           status: p.status || 'draft',
           generated: p.mp3_filename ? p : (p.generated || {})
-        })).filter(p => String(p.text || '').trim() || ((p.generated || {}).mp3_filename || (p.generated || {}).raw_filename));
+        }));
         draftPrompts = rows;
         saveDraftPromptCache();
       } catch(err) {

@@ -10,6 +10,9 @@ This package intentionally contains no tenant domains, prompt text, phone number
 - Deterministic condition evaluation, including ordinary comparisons and
   time-of-day ranges (with overnight-window support).
 - Callback-driven prompt-graph advancement that private adapters use for live calls.
+- Explicit `statement` / `query` prompt modes: statements continue immediately;
+  queries wait for caller speech. The final prompt is a statement and a cleared
+  prompt slot is a clean end-of-call point.
 - Generic REST request shaping for live variables, output sorters, and output destinations.
 - Generic post-call output payload and plain-text/email formatting.
 - Provider-neutral realtime event classification for a ConversationRelay-style
@@ -42,6 +45,12 @@ The prompt-graph runner intentionally delegates branch decisions and answer
 requirements to the tenant adapter. That keeps a tenant's Workers AI model,
 call policy, and provider bindings private while the queue traversal behavior
 is shared and fully testable.
+
+Prompt numbering has no hidden semantics. Prompt 1 is not automatically a
+greeting, and a prompt is not inferred to be a goodbye from its text. The
+tenant editor chooses `Statement` or `Query` for every slot; it forces only the
+last prompt to `Statement`. Keeping cleared slots in the saved graph lets a
+tenant end a call without deleting a step or rewiring its conditions.
 
 Alias names such as `COMPANY_LOOKUP_TOKEN` may be stored as editable GitHub Actions variables in the private tenant repository. The value behind the alias must remain in the private adapter's own secret provider. The public engine receives neither the mapping nor the value.
 
