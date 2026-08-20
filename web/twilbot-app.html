@@ -731,7 +731,8 @@
         renderCallLogList();
       }
     }
-    function initCallLogsView() {
+    function initCallLogsView(options={}) {
+      const silent = !!options.silent;
       const btn = document.getElementById('callLogRefreshBtn');
       if(btn) btn.addEventListener('click', () => loadCallLogs(false, true));
       renderCallLogDetail(null);
@@ -740,9 +741,9 @@
         if(document.hidden || callLogsBusy) return;
         loadCallLogs(false, false, {silent:true});
       }, 45000);
-      // The shared bootstrap owns the first reveal. Releasing here can expose
-      // cached controls before the authoritative prompt settings arrive.
-      loadCallLogs(true);
+      // Populate logs while the phone screen loads so switching tabs never
+      // waits on its initial network request.
+      loadCallLogs(true, true, {silent});
     }
     function saveUiSnapshot() {
       try {
@@ -5768,10 +5769,20 @@ ${conditionText}`);
         syncAllOutputControls(lastOutputs);
       }
       initMainViewTabs(initialMainView);
+      if(!callLogsInitialized) {
+        callLogsInitialized = true;
+        setTimeout(() => initCallLogsView({silent:true}), 0);
+      }
     } catch(err) {
       console.error('Initial app render failed:', err);
       try { ensureApiToolsPanelRendered(); } catch(_err) {}
       try { initMainViewTabs(initialMainView); } catch(_err) {}
+      try {
+        if(!callLogsInitialized) {
+          callLogsInitialized = true;
+          setTimeout(() => initCallLogsView({silent:true}), 0);
+        }
+      } catch(_err) {}
       try { document.body.classList.remove('hydrating-settings', 'booting'); } catch(_err) {}
     }
     Promise.allSettled([loadDraftPrompts(), refresh(), loadOutputsOnce(), loadOutputServiceStatus()]).finally(()=>{
