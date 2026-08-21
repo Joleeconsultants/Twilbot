@@ -3686,7 +3686,7 @@
     function renderPromptToolbarActions() {
       if(!promptToolbarActionsEl) return;
       if(!promptDraftSettingsLoaded) {
-        promptToolbarActionsEl.innerHTML = '<div class="topToggles" style="visibility:hidden"><div class="topToggle promptAutoWrap"><span class="topToggleLabel">Auto Update</span><button type="button" class="outputSwitchBtn" disabled aria-hidden="true"><span class="slider"></span></button></div></div>';
+        promptToolbarActionsEl.innerHTML = '<div class="topToggles" style="visibility:hidden"><div class="topToggle promptAutoWrap"><span class="topToggleLabel">Auto Update</span><button type="button" class="outputSwitchBtn is-on" disabled aria-hidden="true"><span class="slider"></span></button></div></div>';
         return;
       }
       promptToolbarActionsEl.innerHTML = `<div class="topToggles"><div class="topToggle promptAutoWrap"><span class="topToggleLabel">Auto Update</span><button type="button" class="outputSwitchBtn ${autoUpdatePrompts ? 'is-on' : ''}" data-output-key="prompt_auto_update" id="autoUpdatePromptsToggleBtn" role="switch" aria-checked="${autoUpdatePrompts ? 'true' : 'false'}" aria-label="Auto Update" ${draftBusy ? 'disabled' : ''}><span class="slider"></span></button></div></div>`;
