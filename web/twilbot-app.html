@@ -206,6 +206,7 @@
       .mainViewTab{min-width:0;width:100%}
       .promptList{--flow-gap:8px}
       .promptRow,.outputGrid{grid-template-columns:1fr}
+      .promptTag{display:none}
       .drag{min-height:44px;place-items:center;overflow:visible}
       .sideMoveButtons{display:none}
       .mobileDragLabel{display:grid}
@@ -2950,7 +2951,19 @@
       const wantedKeys = rows.map(row => row.key);
       const hasControls = keys.length === wantedKeys.length && wantedKeys.every(key => keys.includes(key));
       if(!hasControls) {
-        outputGridEl.innerHTML = `<div class="topToggles">${rows.map(row => `<div class="topToggle"><span class="topToggleLabel">${row.label}</span><button type="button" class="outputSwitchBtn" data-output-key="${row.key}"${row.color ? ` data-output-color="${row.color}"` : ''} role="switch" aria-checked="false" aria-label="${row.label}"><span class="slider"></span></button></div>`).join('')}</div>`;
+        outputGridEl.innerHTML = `<div class="topToggles">${rows.map(row => `<div class="topToggle"><span class="topToggleLabel">${esc(row.label)}</span><button type="button" class="outputSwitchBtn" data-output-key="${esc(row.key)}"${row.color ? ` data-output-color="${esc(row.color)}"` : ''} role="switch" aria-checked="false" aria-label="${esc(row.label)}"><span class="slider"></span></button></div>`).join('')}</div>`;
+      } else {
+        // Keys can stay the same while destination label/color change in the API
+        // tool editor. Update existing controls so custom switch colors apply.
+        rows.forEach(row => {
+          const button = Array.from(outputGridEl.querySelectorAll('button[data-output-key]')).find(el => el.getAttribute('data-output-key') === row.key);
+          if(!button) return;
+          if(row.color) button.setAttribute('data-output-color', row.color);
+          else button.removeAttribute('data-output-color');
+          button.setAttribute('aria-label', row.label);
+          const labelEl = button.closest('.topToggle') && button.closest('.topToggle').querySelector('.topToggleLabel');
+          if(labelEl) labelEl.textContent = row.label;
+        });
       }
       renderOutputSorterPanel();
       outputGridEl.querySelectorAll('button[data-output-key]').forEach(el => {
@@ -3645,7 +3658,7 @@
             ${moveControl}
             <button type="button" class="btnAction primary" data-action="generate" data-role="generate" data-id="${esc(prompt.id)}" tabindex="0">${generateLabel}</button>
             <button type="button" class="btnPlay" data-action="play" data-dirty="${dirty ? '1' : '0'}" data-id="${esc(prompt.id)}" ${dirty || !generated.mp3_filename ? 'disabled' : ''}>▶ Play</button>
-            <button type="button" class="btnAction warn" data-action="delete" data-id="${esc(prompt.id)}">Clear</button>
+            <button type="button" class="btnAction warn" data-action="delete" data-id="${esc(prompt.id)}" ${draftPrompts.length <= 2 ? 'disabled' : ''}>Delete</button>
           </div>
         </div>`;
     }
@@ -5014,15 +5027,21 @@ ${conditionText}`);
         return generateOneDraftPrompt(id, false);
       }
       if(action === 'delete') {
+        if(draftPrompts.length <= 2) {
+          setPromptNotice('Minimum 2 prompts required.');
+          return;
+        }
         const row = draftPrompts[idx] || {};
         const generated = row.generated || {};
         const hasRealContent = !!String(row.text || '').trim() || !!String(generated.mp3_filename || generated.raw_filename || generated.text || generated.resolved_text || '').trim();
         if(hasRealContent) {
           const label = promptMoveOptionLabel(id);
-          const ok = confirm(`Clear ${label}? The empty prompt will end the call when reached.`);
+          const ok = confirm(`Delete ${label}?`);
           if(!ok) return;
         }
-        draftPrompts[idx] = { ...row, title:'', text:'', notes:'', mode:'statement', status:'draft', generated:{} };
+        removeFlowItemFromAllIfBranches(`prompt:${id}`);
+        saveFlowOrder(normalizedFlowOrder().filter(flowId => flowId !== `prompt:${id}`));
+        draftPrompts.splice(idx, 1);
       }
       if(action === 'set-mode') {
         const row = draftPrompts[idx] || {};
